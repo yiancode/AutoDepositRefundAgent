@@ -1,0 +1,224 @@
+{
+  "project": {
+    "name": "知识星球训练营退款系统 v0",
+    "version": "0.1.0",
+    "stage": "v0-开发阶段",
+    "techStack": {
+      "backend": "Node.js + Express.js",
+      "frontend": "Vue 3 + Vite + Element Plus",
+      "database": "无（纯 API 代理）"
+    },
+    "mainBranch": "main",
+    "deployDomain": "zsxq.dc401.com",
+    "targetTimeline": "4天内完成"
+  },
+
+  "commit": {
+    "autoPush": true,
+    "updateDocs": true,
+    "defaultBranch": "main",
+    "requireTests": false,
+    "checkCoverage": false,
+    "minCoverage": 60,
+    "conventionalCommits": true,
+    "signCommit": false,
+    "preventSensitiveFiles": true,
+    "sensitivePatterns": [
+      ".env",
+      ".env.local",
+      "*.key",
+      "*.pem",
+      "*secret*",
+      "*password*",
+      "config/zsxq-cookie.txt"
+    ]
+  },
+
+  "codeReview": {
+    "enabled": true,
+    "autoReviewOnCommit": false,
+    "rules": {
+      "backend": {
+        "maxFunctionLength": 80,
+        "maxFileLength": 500,
+        "requireJsDoc": true,
+        "requireErrorHandling": true,
+        "minTestCoverage": 60
+      },
+      "frontend": {
+        "maxComponentLength": 400,
+        "requirePropsType": true,
+        "requireEmitsDeclaration": true,
+        "preferComputedOverMethods": true
+      },
+      "security": {
+        "checkSqlInjection": false,
+        "checkXss": true,
+        "checkSensitiveData": true,
+        "checkApiKeyExposure": true
+      }
+    },
+    "severity": {
+      "error": ["apiKeyExposure", "xss", "uncaughtException"],
+      "warning": ["functionLength", "missingJsDoc", "noErrorHandling"],
+      "info": ["componentLength", "preferComputed"]
+    }
+  },
+
+  "test": {
+    "autoRunOnCommit": false,
+    "minCoverageBackend": 60,
+    "minCoverageFrontend": 50,
+    "failOnCoverageDrop": false,
+    "excludePatterns": [
+      "**/node_modules/**",
+      "**/dist/**",
+      "**/*.config.js"
+    ],
+    "reportFormats": ["html", "text"],
+    "testCommand": {
+      "backend": "npm test",
+      "frontend": "npm run test"
+    }
+  },
+
+  "progress": {
+    "autoSaveOnCommit": false,
+    "checkpointRetentionDays": 30,
+    "maxCheckpoints": 30,
+    "milestones": [
+      {
+        "name": "Day 1: 后端基础框架",
+        "targetDate": "2025-01-01",
+        "status": "pending"
+      },
+      {
+        "name": "Day 2: 核心功能完成",
+        "targetDate": "2025-01-02",
+        "status": "pending"
+      },
+      {
+        "name": "Day 3: 前端开发",
+        "targetDate": "2025-01-03",
+        "status": "pending"
+      },
+      {
+        "name": "Day 4: 部署上线",
+        "targetDate": "2025-01-04",
+        "status": "pending"
+      }
+    ]
+  },
+
+  "bugTracking": {
+    "autoDetectDuplicates": true,
+    "autoLinkToIssues": false,
+    "retentionDays": 90,
+    "categories": [
+      "backend-nodejs",
+      "frontend-vue",
+      "api-integration",
+      "deployment",
+      "other"
+    ]
+  },
+
+  "contextTransfer": {
+    "autoTriggerThreshold": 0.8,
+    "includeFileTree": true,
+    "includeGitHistory": true,
+    "maxHistoryCommits": 10,
+    "includeEnvironmentVars": false
+  },
+
+  "docs": {
+    "autoGenerateChangelog": true,
+    "autoUpdateReadme": false,
+    "apiDocFormat": "markdown",
+    "includeExamples": true
+  },
+
+  "deploy": {
+    "requireConfirmation": {
+      "dev": false,
+      "test": false,
+      "prod": true
+    },
+    "autoBackup": true,
+    "healthCheckTimeout": 30,
+    "autoRollbackOnFailure": true,
+    "deployCommands": {
+      "backend": [
+        "npm install",
+        "pm2 restart zsxq-backend || pm2 start server.js --name zsxq-backend"
+      ],
+      "frontend": [
+        "npm install",
+        "npm run build",
+        "cp -r dist/* /var/www/web/"
+      ]
+    },
+    "serverInfo": {
+      "host": "zsxq.dc401.com",
+      "port": 3013,
+      "user": "deploy",
+      "nginxConfig": "/etc/nginx/sites-available/zsxq"
+    }
+  },
+
+  "v0Specific": {
+    "noDatabase": true,
+    "apiProxyMode": true,
+    "zsxqApiEndpoint": "https://api.zsxq.com/v2",
+    "cookieStorageMode": "file",
+    "cookieUpdateMethod": "web-interface",
+    "maxConcurrentUsers": 5,
+    "maxCampMembers": 200,
+    "autoPagenation": true,
+    "features": {
+      "getCampList": true,
+      "generateRefundList": true,
+      "copyQualifiedMembers": true,
+      "exportExcel": true,
+      "downloadImage": true,
+      "cookieValidation": true,
+      "apiKeyAuth": true,
+      "dataCache": false
+    },
+    "priorityOrder": [
+      "获取训练营列表",
+      "生成退款名单",
+      "一键复制合格人员",
+      "导出 Excel",
+      "下载图片",
+      "Cookie 失效检测",
+      "API 鉴权"
+    ]
+  },
+
+  "performance": {
+    "apiRequestTimeout": 10000,
+    "apiRetryCount": 2,
+    "apiRetryDelay": 1000,
+    "rateLimitPerMinute": 100,
+    "cacheDisabled": true
+  },
+
+  "logging": {
+    "level": "info",
+    "format": "combined",
+    "outputFile": "logs/app.log",
+    "maxFileSize": "10MB",
+    "maxFiles": 3,
+    "logRotation": true
+  },
+
+  "security": {
+    "apiKeyAuth": true,
+    "apiKeyHeader": "X-API-Key",
+    "cookieEncryption": false,
+    "httpsOnly": true,
+    "corsEnabled": true,
+    "corsOrigin": ["https://zsxq.dc401.com"]
+  }
+}

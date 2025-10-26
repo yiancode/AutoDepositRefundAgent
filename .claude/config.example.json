@@ -1,0 +1,93 @@
+{
+  "project": {
+    "name": "知识星球训练营自动押金退款系统",
+    "version": "1.0.0",
+    "stage": "阶段零",
+    "mainBranch": "main"
+  },
+  "commit": {
+    "autoPush": true,
+    "updateDocs": true,
+    "defaultBranch": "main",
+    "requireTests": false,
+    "checkCoverage": false,
+    "minCoverage": 70,
+    "conventionalCommits": true,
+    "signCommit": false,
+    "preventSensitiveFiles": true
+  },
+  "codeReview": {
+    "enabled": true,
+    "autoReviewOnCommit": true,
+    "rules": {
+      "backend": {
+        "maxMethodLength": 50,
+        "maxClassLength": 500,
+        "requireNullCheck": true,
+        "requireLogging": true,
+        "requireJavadoc": true,
+        "minTestCoverage": 70
+      },
+      "frontend": {
+        "maxComponentLength": 300,
+        "requirePropsType": true,
+        "requireEmitsDeclaration": true,
+        "preferComputedOverMethods": true
+      },
+      "security": {
+        "checkSqlInjection": true,
+        "checkXss": true,
+        "checkSensitiveData": true
+      }
+    },
+    "severity": {
+      "error": ["nullCheck", "sqlInjection", "xss"],
+      "warning": ["methodLength", "magicNumber", "logging"],
+      "info": ["javadoc", "componentLength"]
+    }
+  },
+  "test": {
+    "autoRunOnCommit": true,
+    "minCoverageBackend": 80,
+    "minCoverageFrontend": 70,
+    "failOnCoverageDrop": false,
+    "excludePatterns": [
+      "**/generated/**",
+      "**/dto/**",
+      "**/vo/**"
+    ],
+    "reportFormats": ["html", "xml", "json"]
+  },
+  "progress": {
+    "autoSaveOnCommit": false,
+    "checkpointRetentionDays": 30,
+    "maxCheckpoints": 50
+  },
+  "bugTracking": {
+    "autoDetectDuplicates": true,
+    "autoLinkToIssues": true,
+    "retentionDays": 365
+  },
+  "contextTransfer": {
+    "autoTriggerThreshold": 0.8,
+    "includeFileTree": true,
+    "includeGitHistory": true,
+    "maxHistoryCommits": 10
+  },
+  "docs": {
+    "autoGenerateChangelog": true,
+    "autoUpdateReadme": false,
+    "apiDocFormat": "markdown",
+    "includeExamples": true
+  },
+  "deploy": {
+    "requireConfirmation": {
+      "dev": false,
+      "test": false,
+      "prod": true
+    },
+    "autoBackup": true,
+    "healthCheckTimeout": 60,
+    "autoRollbackOnFailure": true
+  }
+}

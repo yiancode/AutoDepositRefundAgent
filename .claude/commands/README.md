@@ -386,7 +386,7 @@ Code Review
 
 ## 📚 相关文档
 
-- [CLAUDE.md](../../CLAUDE.md) - 项目概述和配置
+- [CLAUDE.md](../../CLAUDE.md_back) - 项目概述和配置
 - [开发进度](../../docs/开发进度.md) - 开发进度跟踪（待创建）
 - [Bug经验库](../../docs/Bug经验库.md) - Bug 记录（待创建）
 - [前端开发规范](../../docs/v0/4前端开发规范.md) - 前端规范

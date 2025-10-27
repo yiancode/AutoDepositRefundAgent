@@ -34,7 +34,12 @@ const corsOptions = {
     // 允许的域名白名单
     const whitelist = process.env.CORS_WHITELIST
       ? process.env.CORS_WHITELIST.split(',')
-      : ['http://localhost:5173', 'http://localhost:3000'];
+      : [
+          'http://localhost:5173',
+          'http://localhost:3000',
+          'https://zsxq.dc401.com',  // 生产域名
+          'http://zsxq.dc401.com'     // HTTP 备用
+        ];
 
     // 开发环境允许所有来源
     if (process.env.NODE_ENV === 'development') {
@@ -42,6 +47,7 @@ const corsOptions = {
     } else if (!origin || whitelist.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
+      logger.warn(`CORS 阻止来源: ${origin}`);
       callback(new Error('CORS 策略不允许该来源'));
     }
   },

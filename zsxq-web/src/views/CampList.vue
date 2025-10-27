@@ -80,7 +80,8 @@ const loadCamps = async () => {
   loading.value = true;
   try {
     const data = await getCamps({ scope: scope.value });
-    camps.value = data.camps || [];
+    // data 本身就是训练营数组 (拦截器已经返回了 res.data)
+    camps.value = data || [];
     ElMessage.success(`加载成功,共 ${camps.value.length} 个训练营`);
   } catch (error) {
     ElMessage.error('加载失败:' + error.message);

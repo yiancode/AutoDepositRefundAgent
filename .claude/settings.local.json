@@ -17,7 +17,9 @@
       "Bash(npm create:*)",
       "Read(//private/tmp/npm-cache-web/_logs/**)",
       "Bash(npm run format:*)",
-      "Bash(npm test:*)"
+      "Bash(npm test:*)",
+      "Bash(npm run build:*)",
+      "Bash(python3:*)"
     ],
     "deny": [],
     "ask": []

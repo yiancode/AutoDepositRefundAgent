@@ -19,7 +19,15 @@
       "Bash(npm run format:*)",
       "Bash(npm test:*)",
       "Bash(npm run build:*)",
-      "Bash(python3:*)"
+      "Bash(python3:*)",
+      "Bash(npm run dev:*)",
+      "Bash(lsof:*)",
+      "Bash(xargs kill:*)",
+      "Bash(pm2 list:*)",
+      "Bash(chmod:*)",
+      "Bash(./setup-dev-env.sh:*)",
+      "Bash(bash:*)",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []

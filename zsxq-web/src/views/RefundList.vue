@@ -104,6 +104,17 @@
         {{ statistics.qualified_names }}
       </div>
     </el-card>
+
+    <!-- 导出操作栏 -->
+    <div v-if="refundList.length > 0" class="export-bar">
+      <el-button type="success" :icon="Picture" @click="handleDownloadImage">
+        下载图片
+      </el-button>
+      <el-button type="primary" :icon="Document" @click="handleExportExcel">
+        导出 Excel
+      </el-button>
+      <el-button :icon="Download" @click="exportText"> 导出文本 </el-button>
+    </div>
   </div>
 </template>
 
@@ -111,8 +122,9 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
-import { ArrowLeft, Document, Download } from '@element-plus/icons-vue';
+import { ArrowLeft, Document, Download, Picture } from '@element-plus/icons-vue';
 import { generateRefundList } from '@/api/camps';
+import { exportExcel, downloadImage } from '@/utils/export';
 
 const route = useRoute();
 const router = useRouter();
@@ -125,7 +137,7 @@ const totalDays = ref(parseInt(route.query.totalDays || 7));
 // 状态
 const loading = ref(false);
 const form = ref({
-  requiredDays: totalDays.value // 默认要求完成所有天数
+  requiredDays: 7 // 默认要求完成 7 天
 });
 const refundList = ref([]);
 const statistics = ref(null);
@@ -182,6 +194,36 @@ ${statistics.value.qualified_names}
   URL.revokeObjectURL(url);
 
   ElMessage.success('导出成功');
+};
+
+// 导出 Excel
+const handleExportExcel = () => {
+  if (!refundList.value.length) {
+    ElMessage.warning('暂无数据可导出');
+    return;
+  }
+
+  exportExcel(
+    refundList.value,
+    {
+      title: campTitle.value,
+      totalDays: totalDays.value
+    },
+    statistics.value,
+    form.value.requiredDays
+  );
+};
+
+// 下载图片
+const handleDownloadImage = () => {
+  if (!refundList.value.length) {
+    ElMessage.warning('暂无数据可导出');
+    return;
+  }
+
+  downloadImage('.page-container', {
+    title: campTitle.value
+  });
 };
 
 // 返回列表
@@ -254,6 +296,15 @@ onMounted(() => {
   word-break: break-all;
 }
 
+.export-bar {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid #ebeef5;
+}
+
 /* 响应式布局 */
 @media (max-width: 768px) {
   .page-container {
@@ -291,6 +342,14 @@ onMounted(() => {
     display: block;
     margin-left: 0;
     margin-top: 8px;
+  }
+
+  .export-bar {
+    flex-direction: column;
+  }
+
+  .export-bar .el-button {
+    width: 100%;
   }
 }
 </style>

@@ -1894,11 +1894,15 @@ git commit -m "feat(web): 实现前端核心功能
 ## 🚀 Sprint 3: 导出功能 + 部署上线
 
 ### 📅 时间安排
-- **预计时间**: 8 小时
+- **预计时间**: 5 小时 (使用宝塔面板大幅简化部署流程)
 - **优先级**: P1
 
 ### 🎯 目标
 实现导出功能（Excel 和图片），完成服务器部署，系统上线。
+
+### 🔧 技术栈
+- **前端导出**: xlsx + html2canvas
+- **部署方式**: 宝塔面板 (图形化操作,无需命令行配置)
 
 ---
 
@@ -2111,179 +2115,162 @@ const handleDownloadImage = () => {
 
 ---
 
-### 📦 Task 3.3: 服务器环境准备
+### 📦 Task 3.3: 准备部署文件包
 
-**预计时间**: 1.5 小时
+**预计时间**: 0.5 小时
 
 #### 操作步骤
 
-1. **连接服务器**
+1. **构建前端项目**
    ```bash
-   ssh root@your-server-ip
+   cd zsxq-web
+   npm run build
+   ```
+   - 生成 `dist/` 目录,包含静态文件
+
+2. **准备后端项目**
+   ```bash
+   cd zsxq-api
+   # 确保 .env.example 存在
+   ls -la .env.example
+
+   # 确保 ecosystem.config.js 存在
+   ls -la ecosystem.config.js
    ```
 
-2. **安装 Node.js**
-   ```bash
-   # 安装 Node.js 18.x
-   curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-   sudo apt-get install -y nodejs
-
-   # 验证安装
-   node -v  # 应该显示 v18.x
-   npm -v
-   ```
-
-3. **安装 PM2**
-   ```bash
-   sudo npm install -g pm2
-   pm2 -v
-   ```
-
-4. **安装 Nginx**
-   ```bash
-   sudo apt-get update
-   sudo apt-get install -y nginx
-   nginx -v
-   ```
-
-5. **配置防火墙**
-   ```bash
-   sudo ufw allow 80/tcp
-   sudo ufw allow 443/tcp
-   sudo ufw allow 22/tcp
-   sudo ufw enable
-   ```
+3. **检查必要文件**
+   - 后端: `src/`, `package.json`, `.env.example`, `ecosystem.config.js`
+   - 前端: `dist/` 目录
 
 #### 验收标准
-- [ ] Node.js 安装成功
-- [ ] PM2 安装成功
-- [ ] Nginx 安装成功
-- [ ] 防火墙配置正确
+- [ ] 前端构建成功,生成 `dist/` 目录
+- [ ] 后端必要文件齐全
+- [ ] `.env.example` 包含所有必需配置项
 
 ---
 
-### 📦 Task 3.4: 部署后端服务
+### 📦 Task 3.4: 宝塔部署后端 Node.js 项目
 
-**预计时间**: 1.5 小时
+**预计时间**: 0.5 小时
 
-#### 操作步骤
+#### 操作步骤 (宝塔面板操作)
 
-1. **上传后端代码到服务器**
-   ```bash
-   # 本地
-   cd zsxq-api
-   tar -czf zsxq-api.tar.gz .
-   scp zsxq-api.tar.gz root@your-server-ip:/var/www/
+1. **上传代码**
+   - 方式1: 宝塔文件管理器 → 上传 `zsxq-api.zip`
+   - 方式2: 使用 Git 拉取代码
+   - 建议路径: `/www/wwwroot/zsxq-api/`
 
-   # 服务器
-   cd /var/www
-   tar -xzf zsxq-api.tar.gz -C zsxq-api
-   cd zsxq-api
+2. **添加 Node.js 项目** (宝塔面板 → 网站 → Node项目)
+   - **项目名称**: `知识星球训练营退款系统-API`
+   - **项目路径**: `/www/wwwroot/zsxq-api/`
+   - **端口号**: `3013`
+   - **启动文件**: `src/index.js`
+   - **运行用户**: `www`
+   - **Node 版本**: 选择 `v18.x` 或更高
+
+3. **配置环境变量** (项目设置 → 环境变量)
+   ```env
+   NODE_ENV=production
+   PORT=3013
+   ZSXQ_GROUP_ID=15555411412112
+   ZSXQ_X_TIMESTAMP=你的时间戳
+   ZSXQ_AUTHORIZATION=你的授权token
+   ZSXQ_X_SIGNATURE=你的签名
    ```
 
-2. **安装依赖**
+4. **安装依赖** (项目设置 → 终端)
    ```bash
    npm install --production
    ```
 
-3. **配置环境变量**
-   ```bash
-   cp .env.example .env
-   vim .env
+5. **启动项目**
+   - 点击"启动"按钮
+   - 查看日志,确保没有错误
 
-   # 填入正式配置:
-   # PORT=3013
-   # ZSXQ_GROUP_ID=15555411412112
-   # ZSXQ_X_TIMESTAMP=xxx
-   # ZSXQ_AUTHORIZATION=xxx
-   # ZSXQ_X_SIGNATURE=xxx
-   ```
-
-4. **启动 PM2**
-   ```bash
-   pm2 start ecosystem.config.js
-   pm2 save
-   pm2 startup
-   ```
-
-5. **测试接口**
+6. **测试接口**
    ```bash
    curl http://localhost:3013/health
    ```
 
 #### 验收标准
-- [ ] 后端服务成功启动
-- [ ] PM2 进程正常运行
+- [ ] Node.js 项目在宝塔中成功添加
+- [ ] 环境变量配置正确
+- [ ] 项目成功启动,状态显示"运行中"
 - [ ] 健康检查接口返回 200
+
+#### 宝塔常见问题
+- **端口被占用**: 修改 PORT 环境变量
+- **依赖安装失败**: 检查 npm 镜像源,可切换为淘宝镜像
+- **启动失败**: 查看项目日志,检查 .env 配置
 
 ---
 
-### 📦 Task 3.5: 部署前端项目
+### 📦 Task 3.5: 宝塔部署前端静态网站
 
-**预计时间**: 1 小时
+**预计时间**: 0.5 小时
 
-#### 操作步骤
+#### 操作步骤 (宝塔面板操作)
 
-1. **本地构建前端**
-   ```bash
-   cd zsxq-web
-   npm run build
-   ```
+1. **添加网站** (宝塔面板 → 网站 → 添加站点)
+   - **域名**: `zsxq.dc401.com` (或你的域名)
+   - **根目录**: `/www/wwwroot/zsxq-web/`
+   - **PHP 版本**: 选择 `纯静态`
+   - **备注**: `知识星球退款系统前端`
 
-2. **上传到服务器**
-   ```bash
-   scp -r dist root@your-server-ip:/var/www/zsxq-web
-   ```
+2. **上传前端文件**
+   - 方式1: 宝塔文件管理器 → 上传 `dist.zip` → 解压到网站根目录
+   - 方式2: 使用 Git 拉取代码后,将 `dist/` 内容复制到网站根目录
+   - 确保根目录包含 `index.html`
 
-3. **配置 Nginx**
-   ```bash
-   # 服务器
-   sudo vim /etc/nginx/sites-available/zsxq.dc401.com
+3. **配置反向代理** (网站设置 → 反向代理)
+   - **代理名称**: `API代理`
+   - **目标URL**: `http://127.0.0.1:3013`
+   - **发送域名**: `$host`
+   - **代理目录**: `/api`
 
-   # 填入以下配置:
-   server {
-       listen 80;
-       server_name zsxq.dc401.com;
-
-       # 前端静态文件
-       location / {
-           root /var/www/zsxq-web;
-           try_files $uri $uri/ /index.html;
-           index index.html;
-       }
-
-       # 后端 API 代理
-       location /api/ {
-           proxy_pass http://localhost:3013/;
-           proxy_set_header Host $host;
-           proxy_set_header X-Real-IP $remote_addr;
-           proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-           proxy_set_header X-Forwarded-Proto $scheme;
-       }
+   **配置内容**:
+   ```nginx
+   location ^~ /api/ {
+       proxy_pass http://127.0.0.1:3013/;
+       proxy_set_header Host $host;
+       proxy_set_header X-Real-IP $remote_addr;
+       proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+       proxy_set_header X-Forwarded-Proto $scheme;
+       proxy_http_version 1.1;
+       proxy_set_header Upgrade $http_upgrade;
+       proxy_set_header Connection "upgrade";
    }
-
-   # 启用站点
-   sudo ln -s /etc/nginx/sites-available/zsxq.dc401.com /etc/nginx/sites-enabled/
-   sudo nginx -t
-   sudo systemctl reload nginx
    ```
 
-4. **配置 HTTPS（可选但推荐）**
-   ```bash
-   sudo apt-get install certbot python3-certbot-nginx
-   sudo certbot --nginx -d zsxq.dc401.com
+4. **配置 SPA 路由** (网站设置 → 配置文件)
+   - 在 `location /` 块中添加:
+   ```nginx
+   location / {
+       try_files $uri $uri/ /index.html;
+   }
    ```
 
-5. **测试访问**
-   ```bash
-   curl http://zsxq.dc401.com
-   ```
+5. **配置 SSL 证书** (网站设置 → SSL → Let's Encrypt)
+   - 勾选域名
+   - 点击"申请"
+   - 等待证书签发
+   - 开启"强制HTTPS"
+
+6. **测试访问**
+   - HTTP: `http://zsxq.dc401.com`
+   - HTTPS: `https://zsxq.dc401.com`
 
 #### 验收标准
 - [ ] 前端页面能正常访问
-- [ ] Nginx 配置正确
-- [ ] API 代理工作正常
-- [ ] (可选) HTTPS 配置成功
+- [ ] API 反向代理配置正确 (能调用后端接口)
+- [ ] SPA 路由配置正确 (刷新页面不出现 404)
+- [ ] SSL 证书配置成功 (HTTPS 访问正常)
+
+#### 宝塔反向代理配置说明
+**为什么要配置 `/api/` 代理?**
+- 前端调用 `/api/camps` → Nginx 反向代理 → `http://127.0.0.1:3013/camps`
+- 避免跨域问题
+- 统一前后端入口
 
 ---
 
@@ -2321,15 +2308,31 @@ const handleDownloadImage = () => {
 
 ### ✅ Sprint 3 交付物检查清单
 
-- [ ] 导出工具实现完成
-- [ ] 退款名单页面集成导出功能
-- [ ] 服务器环境准备完成
-- [ ] 后端服务部署成功
-- [ ] 前端项目部署成功
-- [ ] Nginx 配置正确
-- [ ] HTTPS 配置成功（可选）
-- [ ] 生产环境测试通过
-- [ ] 代码已提交到 Git
+**开发部分** (3.5 小时):
+- [ ] Task 3.1: 导出工具实现完成 (exportExcel + downloadImage)
+- [ ] Task 3.2: 退款名单页面集成导出功能 (导出按钮 + 事件处理)
+
+**部署部分** (1.5 小时，宝塔操作):
+- [ ] Task 3.3: 准备部署文件包 (前端 build + 后端打包)
+- [ ] Task 3.4: 宝塔部署后端 Node.js 项目 (添加 Node 项目 + 环境变量)
+- [ ] Task 3.5: 宝塔部署前端静态网站 (添加站点 + 反向代理 + SSL)
+- [ ] Task 3.6: 生产环境测试 (功能测试 + 性能测试)
+
+**代码提交**:
+- [ ] 所有代码已提交到 Git
+- [ ] 更新 README.md 部署说明
+
+### 📊 Sprint 3 时间分配
+
+| 任务 | 预计时间 | 类型 | 说明 |
+|------|---------|------|------|
+| Task 3.1 | 2h | 开发 | 实现 Excel 和图片导出工具 |
+| Task 3.2 | 1.5h | 开发 | 集成导出功能到页面 |
+| Task 3.3 | 0.5h | 部署准备 | 构建前端 + 检查文件 |
+| Task 3.4 | 0.5h | 宝塔部署 | 后端 Node.js 项目 |
+| Task 3.5 | 0.5h | 宝塔部署 | 前端静态站点 + SSL |
+| Task 3.6 | 0.5h | 测试 | 生产环境完整测试 |
+| **总计** | **5.5h** | - | **比原计划节省 2.5 小时** |
 
 ---
 

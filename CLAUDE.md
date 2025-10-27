@@ -9,10 +9,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **v0 (简化版)**: Node.js + Express.js,无数据库,纯 API 代理,快速验证核心功能
 - **v1 (完整版)**: Java + Spring Boot + PostgreSQL,完整的生产级系统 (未开始)
 
-**当前状态**: v0 开发中 - Sprint 1 完成 (40%),Sprint 2 待开始
+**当前状态**: v0 开发中 - Sprint 2 完成 (65%),Sprint 3 待开始
 
-**最后更新**: 2025-10-27 11:07
-**最后提交**: docs(v0): 添加 API 使用指南文档
+**最后更新**: 2025-10-27 13:50
+**最后提交**: feat(frontend): 实现前端退款名单管理系统
 
 ## 快速命令参考
 

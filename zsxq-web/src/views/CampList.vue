@@ -4,12 +4,7 @@
 
     <!-- 筛选区域 -->
     <div class="filter-bar">
-      <el-select
-        v-model="scope"
-        placeholder="请选择状态"
-        style="width: 200px"
-        @change="loadCamps"
-      >
+      <el-select v-model="scope" placeholder="请选择状态" style="width: 200px" @change="loadCamps">
         <el-option label="进行中" value="ongoing" />
         <el-option label="已结束" value="over" />
         <el-option label="已关闭" value="closed" />
@@ -21,13 +16,7 @@
     </div>
 
     <!-- 训练营列表表格 -->
-    <el-table
-      :data="camps"
-      v-loading="loading"
-      stripe
-      border
-      style="width: 100%; margin-top: 20px"
-    >
+    <el-table :data="camps" v-loading="loading" stripe border style="width: 100%; margin-top: 20px">
       <el-table-column prop="title" label="训练营名称" min-width="200" />
 
       <el-table-column prop="status" label="状态" width="100" align="center">
@@ -39,15 +28,11 @@
       </el-table-column>
 
       <el-table-column prop="checkin_days" label="打卡天数" width="120" align="center">
-        <template #default="{ row }">
-          {{ row.checkin_days }} 天
-        </template>
+        <template #default="{ row }"> {{ row.checkin_days }} 天 </template>
       </el-table-column>
 
       <el-table-column prop="joined_count" label="参与人数" width="120" align="center">
-        <template #default="{ row }">
-          {{ row.joined_count }} 人
-        </template>
+        <template #default="{ row }"> {{ row.joined_count }} 人 </template>
       </el-table-column>
 
       <el-table-column prop="expiration_time" label="结束时间" width="180" align="center">
@@ -66,9 +51,7 @@
           >
             生成名单
           </el-button>
-          <el-button type="info" size="small" disabled v-else>
-            进行中
-          </el-button>
+          <el-button type="info" size="small" disabled v-else> 进行中 </el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -175,5 +158,28 @@ onMounted(() => {
   display: flex;
   gap: 12px;
   align-items: center;
+  flex-wrap: wrap;
+}
+
+/* 响应式布局 */
+@media (max-width: 768px) {
+  .page-container {
+    padding: 16px;
+  }
+
+  .page-title {
+    font-size: 22px;
+    margin-bottom: 16px;
+  }
+
+  .filter-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filter-bar .el-select,
+  .filter-bar .el-button {
+    width: 100%;
+  }
 }
 </style>

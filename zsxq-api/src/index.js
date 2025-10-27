@@ -2,6 +2,8 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpecs = require('./config/swagger');
 const logger = require('./utils/logger');
 const { success } = require('./utils/response');
 const { errorHandler, notFoundHandler } = require('./middlewares/error.middleware');
@@ -61,7 +63,21 @@ app.use((req, res, next) => {
   next();
 });
 
-// 健康检查（不受速率限制）
+/**
+ * @swagger
+ * /health:
+ *   get:
+ *     summary: 健康检查
+ *     description: 检查服务运行状态
+ *     tags: [健康检查]
+ *     responses:
+ *       200:
+ *         description: 服务正常运行
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SuccessResponse'
+ */
 app.get('/health', (req, res) => {
   res.json(success({
     status: 'running',
@@ -71,6 +87,12 @@ app.get('/health', (req, res) => {
     env: process.env.NODE_ENV || 'development'
   }, '服务运行正常'));
 });
+
+// API 文档
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpecs, {
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: '训练营退款系统 API 文档'
+}));
 
 // API 速率限制
 app.use('/api/', apiLimiter);

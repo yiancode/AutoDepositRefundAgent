@@ -15,7 +15,9 @@
       "Bash(npm test)",
       "Bash(awk:*)",
       "Bash(npm create:*)",
-      "Read(//private/tmp/npm-cache-web/_logs/**)"
+      "Read(//private/tmp/npm-cache-web/_logs/**)",
+      "Bash(npm run format:*)",
+      "Bash(npm test:*)"
     ],
     "deny": [],
     "ask": []

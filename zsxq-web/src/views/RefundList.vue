@@ -17,22 +17,12 @@
       <div class="setting-form">
         <el-form :model="form" label-width="120px">
           <el-form-item label="完成要求天数">
-            <el-input-number
-              v-model="form.requiredDays"
-              :min="1"
-              :max="totalDays"
-              :step="1"
-            />
+            <el-input-number v-model="form.requiredDays" :min="1" :max="totalDays" :step="1" />
             <span class="hint">训练营共 {{ totalDays }} 天</span>
           </el-form-item>
 
           <el-form-item>
-            <el-button
-              type="primary"
-              :icon="Document"
-              @click="generateList"
-              :loading="loading"
-            >
+            <el-button type="primary" :icon="Document" @click="generateList" :loading="loading">
               生成退款名单
             </el-button>
             <el-button
@@ -88,9 +78,7 @@
       <el-table-column prop="planet_user_id" label="星球ID" width="150" align="center" />
 
       <el-table-column prop="checkined_days" label="打卡天数" width="100" align="center">
-        <template #default="{ row }">
-          {{ row.checkined_days }} / {{ row.required_days }}
-        </template>
+        <template #default="{ row }"> {{ row.checkined_days }} / {{ row.required_days }} </template>
       </el-table-column>
 
       <el-table-column prop="is_qualified" label="是否合格" width="100" align="center">
@@ -103,10 +91,7 @@
     </el-table>
 
     <!-- 空状态 -->
-    <el-empty
-      v-if="!loading && refundList.length === 0"
-      description="点击"生成退款名单"按钮开始"
-    />
+    <el-empty v-if="!loading && refundList.length === 0" description="点击'生成退款名单'按钮开始" />
 
     <!-- 合格名单(文本格式) -->
     <el-card class="names-card" v-if="statistics && statistics.qualified_names">
@@ -267,5 +252,45 @@ onMounted(() => {
   line-height: 1.8;
   color: #606266;
   word-break: break-all;
+}
+
+/* 响应式布局 */
+@media (max-width: 768px) {
+  .page-container {
+    padding: 16px;
+  }
+
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .page-title {
+    font-size: 22px;
+  }
+
+  .stats-row .el-col {
+    margin-bottom: 12px;
+  }
+
+  .setting-form .el-form {
+    padding: 0;
+  }
+
+  .setting-form .el-form-item {
+    margin-bottom: 16px;
+  }
+
+  .setting-form .el-button {
+    width: 100%;
+    margin-bottom: 8px;
+  }
+
+  .hint {
+    display: block;
+    margin-left: 0;
+    margin-top: 8px;
+  }
 }
 </style>

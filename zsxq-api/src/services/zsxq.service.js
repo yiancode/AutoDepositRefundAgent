@@ -241,6 +241,48 @@ class ZsxqService {
   }
 
   /**
+   * 获取用户详细信息（包含 number 字段）
+   * @param {string} userId - 知识星球用户ID
+   * @returns {Promise<Object>} 用户信息
+   */
+  async getUserDetail(userId) {
+    try {
+      logger.info(`获取用户详情: user_id=${userId}`);
+
+      const url = `/groups/${this.groupId}/members/${userId}/summary`;
+
+      const response = await this.axios.get(url, {
+        headers: this.getHeaders()
+      });
+
+      if (!response.data.succeeded) {
+        throw new Error(`知识星球 API 返回失败: ${response.data.message || '未知错误'}`);
+      }
+
+      const member = response.data.resp_data.member;
+
+      const userInfo = {
+        user_id: String(member.user_id),
+        number: member.number,
+        name: member.name,
+        unique_id: member.unique_id || '',
+        avatar_url: member.avatar_url || '',
+        join_time: member.join_time || '',
+        status: member.status || 'joined',
+        expired_time: member.expired_time || '',
+        introduction: member.introduction || ''
+      };
+
+      logger.info(`用户详情获取成功: user_id=${userId}, number=${userInfo.number}, name=${userInfo.name}`);
+
+      return userInfo;
+    } catch (error) {
+      logger.error(`获取用户详情失败: user_id=${userId}, error=${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
    * 延迟函数
    */
   sleep(ms) {

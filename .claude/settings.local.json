@@ -33,7 +33,13 @@
       "Bash(kill:*)",
       "Bash(for index in 42 63 84)",
       "Bash(do echo -n \"index=$index: \")",
-      "Bash(done)"
+      "Bash(done)",
+      "Bash(redis-cli:*)",
+      "Bash(nc:*)",
+      "Bash(ping:*)",
+      "Bash(for i in 1 2 3)",
+      "Bash(do curl -s -X POST 'http://localhost:3013/api/camps/8424481182/refund-list' -H 'Content-Type: application/json' -d '{\"\"required_days\"\":7}')",
+      "Bash(echo:*)"
     ],
     "deny": [],
     "ask": []

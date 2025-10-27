@@ -10,6 +10,7 @@ const { errorHandler, notFoundHandler } = require('./middlewares/error.middlewar
 const { apiLimiter } = require('./middlewares/rate-limit.middleware');
 const { timeoutMiddleware, haltOnTimeout, timeoutErrorHandler } = require('./middlewares/timeout.middleware');
 const campsRouter = require('./routes/camps');
+const usersRouter = require('./routes/users');
 
 const app = express();
 const PORT = process.env.PORT || 3013;
@@ -99,6 +100,7 @@ app.use('/api/', apiLimiter);
 
 // API 路由
 app.use('/api/camps', campsRouter);
+app.use('/api/users', usersRouter);
 
 // 超时错误处理
 app.use(timeoutErrorHandler);

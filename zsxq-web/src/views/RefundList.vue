@@ -65,9 +65,14 @@
     >
       <el-table-column type="index" label="序号" width="60" align="center" />
 
-      <el-table-column prop="planet_nickname" label="星球昵称" min-width="150" />
+      <el-table-column prop="planet_number" label="星球编号" width="120" align="center">
+        <template #default="{ row }">
+          <el-tag type="info" v-if="row.planet_number">{{ row.planet_number }}</el-tag>
+          <span v-else style="color: #999;">-</span>
+        </template>
+      </el-table-column>
 
-      <el-table-column prop="planet_user_id" label="星球ID" width="150" align="center" />
+      <el-table-column prop="planet_nickname" label="星球昵称" min-width="150" />
 
       <el-table-column prop="checkined_days" label="打卡天数" width="100" align="center">
         <template #default="{ row }"> {{ row.checkined_days }} / {{ row.required_days }} </template>
@@ -277,7 +282,7 @@ const copyQualifiedList = async () => {
 
   // 生成格式：姓名(编号),姓名2(编号2)
   const copyText = qualifiedUsers
-    .map(user => `${user.planet_nickname}(${user.planet_user_id})`)
+    .map(user => `${user.planet_nickname}(${user.planet_number || user.planet_user_id})`)
     .join(',');
 
   try {

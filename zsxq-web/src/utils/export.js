@@ -26,7 +26,7 @@ export function exportExcel(refundList, campInfo, statistics, requiredDays) {
       ['完成打卡人员名单'],
       [statistics.qualified_names],
       [],
-      ['序号', '星球昵称', '星球ID', '打卡天数', '是否合格']
+      ['序号', '星球昵称', '星球编号', '打卡天数', '是否合格']
     ]
 
     // 添加详细名单
@@ -34,8 +34,8 @@ export function exportExcel(refundList, campInfo, statistics, requiredDays) {
       data.push([
         index + 1,
         item.planet_nickname,
-        // 将星球 ID 转为字符串，避免科学计数法
-        `'${item.planet_user_id}`,
+        // 优先使用 planet_number，如果没有则使用 planet_user_id
+        item.planet_number || `'${item.planet_user_id}`,
         item.checkined_days,
         item.is_qualified ? '合格' : '不合格'
       ])

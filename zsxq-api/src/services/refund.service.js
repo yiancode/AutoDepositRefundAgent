@@ -1,5 +1,6 @@
 const logger = require('../utils/logger');
 const zsxqService = require('./zsxq.service');
+const userService = require('./user.service');
 const { REFUND } = require('../config/constants');
 
 /**
@@ -32,15 +33,33 @@ class RefundService {
         };
       }
 
-      // 2. 计算退款资格
-      const refundList = rankingList.map(user => ({
-        planet_user_id: user.planet_user_id,
-        planet_nickname: user.planet_nickname,
-        planet_alias: user.planet_alias,
-        checkined_days: user.checkined_days,
-        required_days: requiredDays,
-        is_qualified: user.checkined_days >= requiredDays
-      }));
+      // 2. 批量获取用户信息（包含 number）
+      const refundListWithNumber = await Promise.all(
+        rankingList.map(async (user) => {
+          let userNumber = null;
+
+          try {
+            // 尝试从缓存获取用户详情（包含 number）
+            const userDetail = await userService.getUserById(user.planet_user_id);
+            userNumber = userDetail.number;
+          } catch (error) {
+            logger.warn(`获取用户 number 失败: user_id=${user.planet_user_id}, error=${error.message}`);
+            // 如果获取失败，保持 number 为 null
+          }
+
+          return {
+            planet_user_id: user.planet_user_id,
+            planet_number: userNumber, // 星球成员编号
+            planet_nickname: user.planet_nickname,
+            planet_alias: user.planet_alias,
+            checkined_days: user.checkined_days,
+            required_days: requiredDays,
+            is_qualified: user.checkined_days >= requiredDays
+          };
+        })
+      );
+
+      const refundList = refundListWithNumber;
 
       // 3. 统计数据
       const totalCount = refundList.length;
@@ -103,15 +122,33 @@ class RefundService {
         };
       }
 
-      // 2. 计算退款资格
-      const refundList = users.map(user => ({
-        planet_user_id: user.planet_user_id,
-        planet_nickname: user.planet_nickname,
-        planet_alias: user.planet_alias,
-        checkined_days: user.checkined_days,
-        required_days: requiredDays,
-        is_qualified: user.checkined_days >= requiredDays
-      }));
+      // 2. 批量获取用户信息（包含 number）
+      const refundListWithNumber = await Promise.all(
+        users.map(async (user) => {
+          let userNumber = null;
+
+          try {
+            // 尝试从缓存获取用户详情（包含 number）
+            const userDetail = await userService.getUserById(user.planet_user_id);
+            userNumber = userDetail.number;
+          } catch (error) {
+            logger.warn(`获取用户 number 失败: user_id=${user.planet_user_id}, error=${error.message}`);
+            // 如果获取失败，保持 number 为 null
+          }
+
+          return {
+            planet_user_id: user.planet_user_id,
+            planet_number: userNumber, // 星球成员编号
+            planet_nickname: user.planet_nickname,
+            planet_alias: user.planet_alias,
+            checkined_days: user.checkined_days,
+            required_days: requiredDays,
+            is_qualified: user.checkined_days >= requiredDays
+          };
+        })
+      );
+
+      const refundList = refundListWithNumber;
 
       // 3. 统计当前页数据
       const pageCount = refundList.length;

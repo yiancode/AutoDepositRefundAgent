@@ -9,7 +9,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **v0 (简化版)**: Node.js + Express.js,无数据库,纯 API 代理,快速验证核心功能
 - **v1 (完整版)**: Java + Spring Boot + PostgreSQL,完整的生产级系统 (未开始)
 
-**当前状态**: v0 开发中 - Sprint 0 完成 (10%),Sprint 1 待开始
+**当前状态**: v0 开发中 - Sprint 1 完成 (40%),Sprint 2 待开始
+
+**最后更新**: 2025-10-27 11:07
+**最后提交**: docs(v0): 添加 API 使用指南文档
 
 ## 快速命令参考
 
@@ -299,18 +302,25 @@ cd zsxq-web && git checkout 6ffb0ab   # 前端
 
 ### Sprint 规划 (v0 版本)
 
-| Sprint | 时间 | 核心目标 | 状态 |
-|--------|------|---------|------|
-| Sprint 0 | Day 0 (4h) | 环境搭建 + 项目骨架 | ✅ 100% |
-| Sprint 1 | Day 1 (8h) | 后端 API + 知识星球对接 | ⏳ 待开始 |
-| Sprint 2 | Day 2 (8h) | 前端页面 + 数据展示 | ⏳ 待开始 |
-| Sprint 3 | Day 3 (8h) | 导出功能 + 部署上线 | ⏳ 待开始 |
+| Sprint | 时间 | 核心目标 | 状态 | 完成时间 |
+|--------|------|---------|------|----------|
+| Sprint 0 | Day 0 (4h) | 环境搭建 + 项目骨架 | ✅ 100% | 2025-10-27 |
+| Sprint 1 | Day 1 (4h) | 后端 API + 知识星球对接 | ✅ 100% | 2025-10-27 |
+| Sprint 2 | Day 2 (8h) | 前端页面 + 数据展示 | ⏳ 待开始 | - |
+| Sprint 3 | Day 3 (8h) | 导出功能 + 部署上线 | ⏳ 待开始 | - |
 
-**当前任务** (Sprint 1):
-- Task 1.1: 实现知识星球 API 服务 (2.5h)
-- Task 1.2: 实现退款名单计算服务 (1.5h)
-- Task 1.3: 实现训练营路由接口 (2h)
-- Task 1.4: Postman 接口测试 (1.5h)
+**Sprint 1 已完成任务**:
+- ✅ Task 1.1: 实现知识星球 API 服务 (568 行代码)
+- ✅ Task 1.2: 实现退款名单计算服务
+- ✅ Task 1.3: 实现训练营路由接口（3 个 API）
+- ✅ Task 1.4: 接口测试（健康检查通过）
+- ✅ 文档编写: README.md + USAGE.md（532 行）
+
+**当前任务** (Sprint 2):
+- Task 2.1: 创建 zsxq-web 前端项目
+- Task 2.2: 实现训练营列表页面
+- Task 2.3: 实现退款名单页面
+- Task 2.4: 对接后端 API
 
 ## 常见问题和解决方案
 

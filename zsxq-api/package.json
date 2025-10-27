@@ -1,0 +1,32 @@
+{
+  "name": "zsxq-api",
+  "version": "1.0.0",
+  "description": "知识星球训练营退款系统 - 后端 API",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "nodemon src/index.js",
+    "start": "node src/index.js",
+    "pm2:start": "pm2 start ecosystem.config.js",
+    "pm2:stop": "pm2 stop zsxq-api",
+    "pm2:restart": "pm2 restart zsxq-api",
+    "pm2:logs": "pm2 logs zsxq-api"
+  },
+  "keywords": [
+    "zsxq",
+    "refund",
+    "training-camp"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.6.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "winston": "^3.11.0",
+    "winston-daily-rotate-file": "^4.7.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}

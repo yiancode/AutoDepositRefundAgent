@@ -1,15 +1,17 @@
 const logger = require('../utils/logger');
 const { error } = require('../utils/response');
+const { sanitizeForLog } = require('../utils/sanitize');
 
 /**
  * 全局错误处理中间件
  */
 function errorHandler(err, req, res, next) {
-  // 记录错误日志
+  // 记录错误日志（过滤敏感信息）
   logger.error(`${req.method} ${req.path} - ${err.message}`, {
     stack: err.stack,
-    body: req.body,
-    query: req.query
+    body: sanitizeForLog(req.body),
+    query: sanitizeForLog(req.query),
+    headers: sanitizeForLog(req.headers)
   });
 
   // 知识星球 Cookie 过期

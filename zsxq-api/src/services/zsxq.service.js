@@ -1,13 +1,23 @@
 const axios = require('axios');
 const logger = require('../utils/logger');
+const { ZSXQ } = require('../config/constants');
 
 /**
  * 知识星球 API 服务
  */
 class ZsxqService {
   constructor() {
-    this.baseURL = 'https://api.zsxq.com/v2';
-    this.groupId = process.env.ZSXQ_GROUP_ID;
+    this.baseURL = ZSXQ.BASE_URL;
+    // 确保 groupId 是字符串类型（知识星球 API 需要）
+    this.groupId = String(process.env.ZSXQ_GROUP_ID || '');
+
+    // 创建 Axios 实例（连接复用）
+    this.axios = axios.create({
+      baseURL: this.baseURL,
+      timeout: ZSXQ.TIMEOUT_MS,
+      maxRedirects: 5,
+      maxContentLength: 50 * 1024 * 1024 // 50MB
+    });
 
     // 验证必需的环境变量
     this.validateConfig();
@@ -58,11 +68,10 @@ class ZsxqService {
     try {
       logger.info(`获取训练营列表: scope=${scope}, count=${count}`);
 
-      const url = `${this.baseURL}/groups/${this.groupId}/checkins`;
-      const response = await axios.get(url, {
+      const url = `/groups/${this.groupId}/checkins`;
+      const response = await this.axios.get(url, {
         params: { scope, count },
-        headers: this.getHeaders(),
-        timeout: 10000
+        headers: this.getHeaders()
       });
 
       if (!response.data.succeeded) {
@@ -99,13 +108,12 @@ class ZsxqService {
       let index = 0;
       let hasMore = true;
 
-      // 自动翻页，最多支持 200 人（2 页）
-      while (hasMore && index < 2) {
-        const url = `${this.baseURL}/groups/${this.groupId}/checkins/${checkinId}/ranking_list`;
-        const response = await axios.get(url, {
+      // 自动翻页，最多支持 200 人
+      while (hasMore && index < ZSXQ.MAX_PAGES) {
+        const url = `/groups/${this.groupId}/checkins/${checkinId}/ranking_list`;
+        const response = await this.axios.get(url, {
           params: { type: 'accumulated', index },
-          headers: this.getHeaders(),
-          timeout: 10000
+          headers: this.getHeaders()
         });
 
         if (!response.data.succeeded) {
@@ -119,9 +127,9 @@ class ZsxqService {
         hasMore = ranking_list.length >= 100;
         index++;
 
-        // 防止频繁请求，间隔 200ms
+        // 防止频繁请求
         if (hasMore) {
-          await this.sleep(200);
+          await this.sleep(ZSXQ.REQUEST_DELAY_MS);
         }
       }
 

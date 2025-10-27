@@ -1,5 +1,6 @@
 const logger = require('../utils/logger');
 const zsxqService = require('./zsxq.service');
+const { REFUND } = require('../config/constants');
 
 /**
  * 退款名单计算服务
@@ -10,7 +11,7 @@ class RefundService {
    * @param {number} checkinId - 训练营ID
    * @param {number} requiredDays - 完成要求天数
    */
-  async generateRefundList(checkinId, requiredDays = 7) {
+  async generateRefundList(checkinId, requiredDays = REFUND.DEFAULT_REQUIRED_DAYS) {
     try {
       logger.info(`生成退款名单: checkin_id=${checkinId}, required_days=${requiredDays}`);
 
@@ -48,11 +49,11 @@ class RefundService {
       const unqualifiedCount = totalCount - qualifiedCount;
       const qualifiedRate = totalCount > 0 ? ((qualifiedCount / totalCount) * 100).toFixed(2) : 0;
 
-      // 4. 生成合格名单（最多显示前 20 个）
+      // 4. 生成合格名单（最多显示配置的数量）
       const qualifiedNames = qualifiedList
-        .slice(0, 20)
+        .slice(0, REFUND.MAX_DISPLAY_NAMES)
         .map(u => u.planet_nickname)
-        .join('、') + (qualifiedCount > 20 ? '...' : '');
+        .join('、') + (qualifiedCount > REFUND.MAX_DISPLAY_NAMES ? '...' : '');
 
       const result = {
         refund_list: refundList,

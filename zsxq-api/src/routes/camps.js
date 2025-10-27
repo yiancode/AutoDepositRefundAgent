@@ -4,6 +4,11 @@ const { success, error } = require('../utils/response');
 const zsxqService = require('../services/zsxq.service');
 const refundService = require('../services/refund.service');
 const logger = require('../utils/logger');
+const {
+  validateCampsQuery,
+  validateCheckinId,
+  validateRefundRequest
+} = require('../middlewares/validation.middleware');
 
 /**
  * GET /api/camps
@@ -13,7 +18,7 @@ const logger = require('../utils/logger');
  * - scope: ongoing/over/closed (默认: over)
  * - count: 返回数量 (默认: 100)
  */
-router.get('/', async (req, res, next) => {
+router.get('/', validateCampsQuery, async (req, res, next) => {
   try {
     const { scope = 'over', count = 100 } = req.query;
 
@@ -37,7 +42,7 @@ router.get('/', async (req, res, next) => {
  * Body 参数:
  * - required_days: 完成要求天数 (默认: 7)
  */
-router.post('/:checkinId/refund-list', async (req, res, next) => {
+router.post('/:checkinId/refund-list', validateCheckinId, validateRefundRequest, async (req, res, next) => {
   try {
     const { checkinId } = req.params;
     const { required_days = 7 } = req.body;
@@ -74,7 +79,7 @@ router.post('/:checkinId/refund-list', async (req, res, next) => {
  * Query 参数:
  * - required_days: 完成要求天数 (默认: 7)
  */
-router.get('/:checkinId/refund-list/text', async (req, res, next) => {
+router.get('/:checkinId/refund-list/text', validateCheckinId, validateCampsQuery, async (req, res, next) => {
   try {
     const { checkinId } = req.params;
     const { required_days = 7 } = req.query;

@@ -108,8 +108,8 @@ class ZsxqService {
       let index = 0;
       let hasMore = true;
 
-      // 自动翻页，最多支持 200 人
-      while (hasMore && index < ZSXQ.MAX_PAGES) {
+      // 自动翻页，最多支持 1000 人 (10 页)
+      while (hasMore && index < 10) {
         const url = `/groups/${this.groupId}/checkins/${checkinId}/ranking_list`;
         const response = await this.axios.get(url, {
           params: { type: 'accumulated', index },
@@ -121,10 +121,20 @@ class ZsxqService {
         }
 
         const ranking_list = response.data.resp_data.ranking_list || [];
-        allUsers = allUsers.concat(ranking_list);
+        const currentCount = ranking_list.length;
 
-        // 如果返回的数据少于 100 条，说明没有更多数据
-        hasMore = ranking_list.length >= 100;
+        // 如果返回数据为空，说明没有更多数据
+        if (currentCount === 0) {
+          hasMore = false;
+          break;
+        }
+
+        allUsers = allUsers.concat(ranking_list);
+        logger.info(`第 ${index + 1} 页获取 ${currentCount} 个用户，累计 ${allUsers.length} 个用户`);
+
+        // 如果返回数据少于 100 条，说明可能没有更多数据了
+        // 但知识星球 API 的分页机制可能有问题，第 2 页开始就返回失败
+        hasMore = currentCount >= 100;
         index++;
 
         // 防止频繁请求

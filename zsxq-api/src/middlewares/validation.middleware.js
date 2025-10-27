@@ -91,8 +91,39 @@ function validateCampsQuery(req, res, next) {
   next();
 }
 
+/**
+ * 验证退款名单查询参数（用于 GET 请求）
+ */
+function validateRefundQuery(req, res, next) {
+  const schema = Joi.object({
+    required_days: Joi.number()
+      .integer()
+      .min(REFUND.MIN_REQUIRED_DAYS)
+      .max(REFUND.MAX_REQUIRED_DAYS)
+      .default(REFUND.DEFAULT_REQUIRED_DAYS)
+      .messages({
+        'number.base': '完成天数必须是数字',
+        'number.integer': '完成天数必须是整数',
+        'number.min': `完成天数最小为 ${REFUND.MIN_REQUIRED_DAYS}`,
+        'number.max': `完成天数最大为 ${REFUND.MAX_REQUIRED_DAYS}`
+      })
+  });
+
+  const { error: validationError, value } = schema.validate(req.query);
+
+  if (validationError) {
+    return res.status(400).json(
+      error(validationError.details[0].message, 400)
+    );
+  }
+
+  req.query = value;
+  next();
+}
+
 module.exports = {
   validateRefundRequest,
   validateCheckinId,
-  validateCampsQuery
+  validateCampsQuery,
+  validateRefundQuery
 };

@@ -6,7 +6,7 @@ module.exports = {
   // 知识星球 API 配置
   ZSXQ: {
     MAX_PAGES: 2,              // 最多翻页数（支持 200 人）
-    REQUEST_DELAY_MS: 200,     // 请求间隔（毫秒）
+    REQUEST_DELAY_MS: 500,     // 请求间隔（毫秒）- 增加到500ms避免请求过快
     TIMEOUT_MS: 10000,         // 请求超时（毫秒）
     BASE_URL: 'https://api.zsxq.com/v2'
   },

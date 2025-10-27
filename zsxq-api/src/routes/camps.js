@@ -7,7 +7,8 @@ const logger = require('../utils/logger');
 const {
   validateCampsQuery,
   validateCheckinId,
-  validateRefundRequest
+  validateRefundRequest,
+  validateRefundQuery
 } = require('../middlewares/validation.middleware');
 
 /**
@@ -79,7 +80,7 @@ router.post('/:checkinId/refund-list', validateCheckinId, validateRefundRequest,
  * Query 参数:
  * - required_days: 完成要求天数 (默认: 7)
  */
-router.get('/:checkinId/refund-list/text', validateCheckinId, validateCampsQuery, async (req, res, next) => {
+router.get('/:checkinId/refund-list/text', validateCheckinId, validateRefundQuery, async (req, res, next) => {
   try {
     const { checkinId } = req.params;
     const { required_days = 7 } = req.query;

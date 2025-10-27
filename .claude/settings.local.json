@@ -7,7 +7,12 @@
       "Bash(npm install:*)",
       "Bash(sudo chown:*)",
       "Bash(curl:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(pkill:*)",
+      "Bash(git log:*)",
+      "Bash(git rev-list:*)",
+      "Bash(npm test)"
     ],
     "deny": [],
     "ask": []

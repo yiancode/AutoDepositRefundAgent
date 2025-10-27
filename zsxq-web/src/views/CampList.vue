@@ -35,6 +35,12 @@
         <template #default="{ row }"> {{ row.joined_count }} 人 </template>
       </el-table-column>
 
+      <el-table-column prop="create_time" label="创建时间" width="180" align="center">
+        <template #default="{ row }">
+          {{ formatDate(row.create_time) }}
+        </template>
+      </el-table-column>
+
       <el-table-column prop="expiration_time" label="结束时间" width="180" align="center">
         <template #default="{ row }">
           {{ formatDate(row.expiration_time) }}

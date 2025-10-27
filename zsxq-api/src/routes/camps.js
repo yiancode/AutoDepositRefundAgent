@@ -34,8 +34,40 @@ router.get('/', validateCampsQuery, async (req, res, next) => {
 });
 
 /**
+ * GET /api/camps/:checkinId/refund-list
+ * 查询退款名单（支持分页 - 用于前端滚动加载）
+ *
+ * URL 参数:
+ * - checkinId: 训练营ID
+ *
+ * Query 参数:
+ * - required_days: 完成要求天数 (默认: 7)
+ * - page_size: 每页数量 (默认: 20)
+ * - index: 起始 rankings 值 (默认: 0)
+ */
+router.get('/:checkinId/refund-list', validateCheckinId, async (req, res, next) => {
+  try {
+    const { checkinId } = req.params;
+    const { required_days = 7, page_size = 20, index = 0 } = req.query;
+
+    logger.info(`API 请求: GET /api/camps/${checkinId}/refund-list?required_days=${required_days}&page_size=${page_size}&index=${index}`);
+
+    const result = await refundService.generateRefundListPaginated(
+      parseInt(checkinId),
+      parseInt(required_days),
+      parseInt(page_size),
+      parseInt(index)
+    );
+
+    res.json(success(result, '退款名单查询成功'));
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
  * POST /api/camps/:checkinId/refund-list
- * 生成退款名单
+ * 生成完整退款名单（一次性获取所有数据）
  *
  * URL 参数:
  * - checkinId: 训练营ID

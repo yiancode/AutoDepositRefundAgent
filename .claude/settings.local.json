@@ -27,7 +27,13 @@
       "Bash(chmod:*)",
       "Bash(./setup-dev-env.sh:*)",
       "Bash(bash:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(test:*)",
+      "Bash(touch:*)",
+      "Bash(kill:*)",
+      "Bash(for index in 42 63 84)",
+      "Bash(do echo -n \"index=$index: \")",
+      "Bash(done)"
     ],
     "deny": [],
     "ask": []

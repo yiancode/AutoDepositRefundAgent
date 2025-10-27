@@ -49,11 +49,10 @@ class RefundService {
       const unqualifiedCount = totalCount - qualifiedCount;
       const qualifiedRate = totalCount > 0 ? ((qualifiedCount / totalCount) * 100).toFixed(2) : 0;
 
-      // 4. 生成合格名单（最多显示配置的数量）
+      // 4. 生成合格名单（显示所有合格人员）
       const qualifiedNames = qualifiedList
-        .slice(0, REFUND.MAX_DISPLAY_NAMES)
         .map(u => u.planet_nickname)
-        .join('、') + (qualifiedCount > REFUND.MAX_DISPLAY_NAMES ? '...' : '');
+        .join('、');
 
       const result = {
         refund_list: refundList,
@@ -72,6 +71,70 @@ class RefundService {
 
     } catch (error) {
       logger.error(`生成退款名单失败: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * 生成退款名单（分页版本 - 用于前端滚动加载）
+   * @param {number} checkinId - 训练营ID
+   * @param {number} requiredDays - 完成要求天数
+   * @param {number} pageSize - 每页数量
+   * @param {number} startIndex - 起始 rankings 值
+   */
+  async generateRefundListPaginated(checkinId, requiredDays = REFUND.DEFAULT_REQUIRED_DAYS, pageSize = 20, startIndex = 0) {
+    try {
+      logger.info(`生成退款名单（分页）: checkin_id=${checkinId}, required_days=${requiredDays}, pageSize=${pageSize}, startIndex=${startIndex}`);
+
+      // 1. 获取打卡排行榜（分页）
+      const { users, hasMore, nextIndex } = await zsxqService.getRankingListPaginated(checkinId, pageSize, startIndex);
+
+      if (!users || users.length === 0) {
+        logger.warn(`训练营 ${checkinId} 无更多打卡数据（index=${startIndex}）`);
+        return {
+          refund_list: [],
+          has_more: false,
+          next_index: startIndex,
+          page_statistics: {
+            page_count: 0,
+            qualified_count: 0,
+            unqualified_count: 0
+          }
+        };
+      }
+
+      // 2. 计算退款资格
+      const refundList = users.map(user => ({
+        planet_user_id: user.planet_user_id,
+        planet_nickname: user.planet_nickname,
+        planet_alias: user.planet_alias,
+        checkined_days: user.checkined_days,
+        required_days: requiredDays,
+        is_qualified: user.checkined_days >= requiredDays
+      }));
+
+      // 3. 统计当前页数据
+      const pageCount = refundList.length;
+      const qualifiedCount = refundList.filter(u => u.is_qualified).length;
+      const unqualifiedCount = pageCount - qualifiedCount;
+
+      const result = {
+        refund_list: refundList,
+        has_more: hasMore,
+        next_index: nextIndex,
+        page_statistics: {
+          page_count: pageCount,
+          qualified_count: qualifiedCount,
+          unqualified_count: unqualifiedCount
+        }
+      };
+
+      logger.info(`退款名单（分页）生成成功: 当前页人数=${pageCount}, 合格=${qualifiedCount}, hasMore=${hasMore}, nextIndex=${nextIndex}`);
+
+      return result;
+
+    } catch (error) {
+      logger.error(`生成退款名单（分页）失败: ${error.message}`);
       throw error;
     }
   }

@@ -25,14 +25,6 @@
             <el-button type="primary" :icon="Document" @click="generateList" :loading="loading">
               生成退款名单
             </el-button>
-            <el-button
-              type="success"
-              :icon="Download"
-              @click="exportText"
-              :disabled="!refundList.length"
-            >
-              导出文本
-            </el-button>
           </el-form-item>
         </el-form>
       </div>
@@ -90,6 +82,20 @@
       </el-table-column>
     </el-table>
 
+    <!-- 加载更多提示 -->
+    <div v-if="refundList.length > 0" class="load-more-tip">
+      <div v-if="loadingMore" class="loading-text">
+        <el-icon class="is-loading"><Loading /></el-icon>
+        <span>加载中...</span>
+      </div>
+      <div v-else-if="!pagination.hasMore" class="end-text">
+        已加载全部数据（共 {{ statistics?.total_count || 0 }} 条）
+      </div>
+      <div v-else class="hint-text">
+        向下滚动加载更多数据
+      </div>
+    </div>
+
     <!-- 空状态 -->
     <el-empty v-if="!loading && refundList.length === 0" description="点击'生成退款名单'按钮开始" />
 
@@ -113,17 +119,22 @@
       <el-button type="primary" :icon="Document" @click="handleExportExcel">
         导出 Excel
       </el-button>
-      <el-button :icon="Download" @click="exportText"> 导出文本 </el-button>
+      <el-button :icon="Download" @click="exportText">
+        导出文本
+      </el-button>
+      <el-button :icon="CopyDocument" @click="copyQualifiedList">
+        一键复制名单
+      </el-button>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
-import { ArrowLeft, Document, Download, Picture } from '@element-plus/icons-vue';
-import { generateRefundList } from '@/api/camps';
+import { ArrowLeft, Document, Download, CopyDocument, Picture, Loading } from '@element-plus/icons-vue';
+import { generateRefundList, getRefundListPaginated } from '@/api/camps';
 import { exportExcel, downloadImage } from '@/utils/export';
 
 const route = useRoute();
@@ -136,28 +147,161 @@ const totalDays = ref(parseInt(route.query.totalDays || 7));
 
 // 状态
 const loading = ref(false);
+const loadingMore = ref(false);
 const form = ref({
   requiredDays: 7 // 默认要求完成 7 天
 });
 const refundList = ref([]);
 const statistics = ref(null);
 
-// 生成退款名单
+// 分页状态
+const pagination = ref({
+  currentIndex: 0,
+  pageSize: 20,
+  hasMore: false
+});
+
+// 生成退款名单（首次加载）
 const generateList = async () => {
   loading.value = true;
+  refundList.value = []; // 清空已有数据
+  pagination.value.currentIndex = 0; // 重置分页
+
   try {
+    // 使用全量接口获取完整数据和统计信息
     const data = await generateRefundList(checkinId.value, {
       required_days: form.value.requiredDays
     });
 
-    refundList.value = data.refund_list || [];
-    statistics.value = data.statistics || null;
+    // 设置数据
+    const allData = data.refund_list || [];
+    statistics.value = data.statistics;
+
+    // 只显示第一页数据
+    refundList.value = allData.slice(0, pagination.value.pageSize);
+
+    // 设置分页状态
+    if (allData.length > pagination.value.pageSize) {
+      pagination.value.hasMore = true;
+      pagination.value.currentIndex = pagination.value.pageSize;
+      // 保存所有数据供后续分页使用
+      refundList.allData = allData;
+    } else {
+      pagination.value.hasMore = false;
+    }
 
     ElMessage.success('生成成功');
+
+    // 添加滚动监听
+    await nextTick();
+    addScrollListener();
   } catch (error) {
     ElMessage.error('生成失败:' + error.message);
   } finally {
     loading.value = false;
+  }
+};
+
+// 加载更多数据（从本地缓存加载，不调用API）
+const loadMore = () => {
+  if (!pagination.value.hasMore || loadingMore.value) {
+    return;
+  }
+
+  loadingMore.value = true;
+
+  // 使用 setTimeout 模拟异步加载，优化用户体验
+  setTimeout(() => {
+    try {
+      const allData = refundList.allData || [];
+      const start = pagination.value.currentIndex;
+      const end = start + pagination.value.pageSize;
+
+      // 从缓存的完整数据中截取下一页
+      const nextPageData = allData.slice(start, end);
+      refundList.value.push(...nextPageData);
+
+      // 更新分页状态
+      pagination.value.currentIndex = end;
+      pagination.value.hasMore = end < allData.length;
+    } catch (error) {
+      console.error('加载更多失败:', error);
+    } finally {
+      loadingMore.value = false;
+    }
+  }, 300); // 300ms延迟，让用户看到加载效果
+};
+
+// 滚动监听
+let scrollListener = null;
+
+const addScrollListener = () => {
+  removeScrollListener(); // 先移除旧的监听器
+
+  scrollListener = () => {
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    const windowHeight = window.innerHeight;
+    const documentHeight = document.documentElement.scrollHeight;
+
+    // 当滚动到距离底部 200px 时触发加载
+    if (scrollTop + windowHeight >= documentHeight - 200) {
+      loadMore();
+    }
+  };
+
+  window.addEventListener('scroll', scrollListener);
+};
+
+const removeScrollListener = () => {
+  if (scrollListener) {
+    window.removeEventListener('scroll', scrollListener);
+    scrollListener = null;
+  }
+};
+
+// 一键复制合格名单
+const copyQualifiedList = async () => {
+  if (!refundList.value || refundList.value.length === 0) {
+    ElMessage.warning('暂无数据可复制');
+    return;
+  }
+
+  // 从完整数据中筛选合格人员
+  const allData = refundList.allData || refundList.value;
+  const qualifiedUsers = allData.filter(user => user.is_qualified);
+
+  if (qualifiedUsers.length === 0) {
+    ElMessage.warning('暂无合格人员');
+    return;
+  }
+
+  // 生成格式：姓名(编号),姓名2(编号2)
+  const copyText = qualifiedUsers
+    .map(user => `${user.planet_nickname}(${user.planet_user_id})`)
+    .join(',');
+
+  try {
+    // 使用 Clipboard API 复制到剪贴板
+    await navigator.clipboard.writeText(copyText);
+    ElMessage.success(`已复制 ${qualifiedUsers.length} 位合格人员名单`);
+  } catch (error) {
+    // 降级方案：使用传统方法复制
+    const textarea = document.createElement('textarea');
+    textarea.value = copyText;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+
+    try {
+      document.execCommand('copy');
+      ElMessage.success(`已复制 ${qualifiedUsers.length} 位合格人员名单`);
+    } catch (err) {
+      ElMessage.error('复制失败，请手动复制');
+      console.error('复制失败:', err);
+    } finally {
+      document.body.removeChild(textarea);
+    }
   }
 };
 
@@ -237,6 +381,11 @@ onMounted(() => {
     generateList();
   }
 });
+
+// 组件卸载时移除滚动监听
+onUnmounted(() => {
+  removeScrollListener();
+});
 </script>
 
 <style scoped>
@@ -294,6 +443,30 @@ onMounted(() => {
   line-height: 1.8;
   color: #606266;
   word-break: break-all;
+}
+
+.load-more-tip {
+  text-align: center;
+  padding: 20px;
+  color: #909399;
+  font-size: 14px;
+}
+
+.load-more-tip .loading-text {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #409eff;
+}
+
+.load-more-tip .end-text {
+  color: #67c23a;
+  font-weight: 500;
+}
+
+.load-more-tip .hint-text {
+  color: #909399;
 }
 
 .export-bar {

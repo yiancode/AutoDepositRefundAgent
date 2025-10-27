@@ -81,13 +81,21 @@ class ZsxqService {
       const checkins = response.data.resp_data.checkins || [];
       logger.info(`成功获取 ${checkins.length} 个训练营`);
 
-      return checkins.map(camp => ({
+      // 按创建时间倒序排序（最新的在前面）
+      const sortedCheckins = checkins.sort((a, b) => {
+        const dateA = new Date(a.create_time);
+        const dateB = new Date(b.create_time);
+        return dateB - dateA; // 倒序
+      });
+
+      return sortedCheckins.map(camp => ({
         checkin_id: camp.checkin_id,
         title: camp.title,
         checkin_days: camp.checkin_days,
         status: camp.status,
         joined_count: camp.joined_count,
-        expiration_time: camp.expiration_time
+        expiration_time: camp.validity?.expiration_time || camp.expiration_time,
+        create_time: camp.create_time
       }));
 
     } catch (error) {
@@ -97,7 +105,73 @@ class ZsxqService {
   }
 
   /**
-   * 获取打卡排行榜（支持自动翻页）
+   * 获取打卡排行榜（分页版本 - 用于前端滚动加载）
+   * @param {number} checkinId - 训练营ID
+   * @param {number} pageSize - 每页数量（默认20）
+   * @param {number} startIndex - 起始 rankings 值（默认0）
+   * @returns {Object} { users, hasMore, nextIndex }
+   */
+  async getRankingListPaginated(checkinId, pageSize = 20, startIndex = 0) {
+    try {
+      logger.info(`获取打卡排行榜（分页）: checkin_id=${checkinId}, pageSize=${pageSize}, startIndex=${startIndex}`);
+
+      const url = `/groups/${this.groupId}/checkins/${checkinId}/ranking_list`;
+
+      const response = await this.axios.get(url, {
+        params: { type: 'accumulated', index: startIndex },
+        headers: this.getHeaders()
+      });
+
+      if (!response.data.succeeded) {
+        logger.warn(`获取排行榜失败（index=${startIndex}）`);
+        return { users: [], hasMore: false, nextIndex: startIndex };
+      }
+
+      const ranking_list = response.data.resp_data.ranking_list || [];
+
+      // 如果返回数据为空，说明没有更多数据
+      if (ranking_list.length === 0) {
+        logger.info(`没有更多数据（index=${startIndex}）`);
+        return { users: [], hasMore: false, nextIndex: startIndex };
+      }
+
+      // 知识星球API每页默认返回约21条数据
+      // 如果返回数据少于21条，说明已经是最后一页
+      const ZSXQ_PAGE_SIZE = 21;
+      const hasMore = ranking_list.length >= ZSXQ_PAGE_SIZE;
+
+      logger.info(`API返回 ${ranking_list.length} 条原始数据，hasMore=${hasMore}`);
+
+      // 截取指定数量的数据返回给前端
+      const slicedList = ranking_list.slice(0, pageSize);
+
+      // nextIndex: 如果还有更多数据，使用API返回的最后一条的 rankings 值
+      // 注意：这里用的是原始API返回的最后一条（第21条），而不是截取后的第20条
+      const lastItemFromApi = ranking_list[ranking_list.length - 1];
+      const nextIndex = hasMore ? lastItemFromApi.rankings : startIndex;
+
+      logger.info(`截取前 ${slicedList.length} 条返回，nextIndex=${nextIndex}`);
+
+      const users = slicedList.map(item => ({
+        planet_user_id: item.user.user_id,
+        planet_nickname: item.user.name,
+        planet_alias: item.user.alias || '',
+        rankings: item.rankings,
+        checkined_days: item.checkined_days
+      }));
+
+      logger.info(`分页获取成功: 返回 ${users.length} 个用户，hasMore=${hasMore}, nextIndex=${nextIndex}`);
+
+      return { users, hasMore, nextIndex };
+
+    } catch (error) {
+      logger.error(`获取打卡排行榜（分页）失败: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * 获取打卡排行榜（支持自动翻页 - 获取所有数据）
    * @param {number} checkinId - 训练营ID
    */
   async getRankingList(checkinId) {
@@ -106,40 +180,47 @@ class ZsxqService {
 
       let allUsers = [];
       let index = 0;
-      let hasMore = true;
+      let pageCount = 0;
+      const maxPages = 100; // 最多支持 100 页，确保能获取所有数据
 
-      // 自动翻页，最多支持 1000 人 (10 页)
-      while (hasMore && index < 10) {
+      // 自动翻页，使用 rankings 值作为下一页的 index
+      while (pageCount < maxPages) {
         const url = `/groups/${this.groupId}/checkins/${checkinId}/ranking_list`;
-        const response = await this.axios.get(url, {
-          params: { type: 'accumulated', index },
-          headers: this.getHeaders()
-        });
 
-        if (!response.data.succeeded) {
-          throw new Error('知识星球 API 返回失败');
-        }
+        try {
+          const response = await this.axios.get(url, {
+            params: { type: 'accumulated', index },
+            headers: this.getHeaders()
+          });
 
-        const ranking_list = response.data.resp_data.ranking_list || [];
-        const currentCount = ranking_list.length;
+          if (!response.data.succeeded) {
+            logger.warn(`第 ${pageCount + 1} 页请求失败（index=${index}），停止翻页`);
+            break;
+          }
 
-        // 如果返回数据为空，说明没有更多数据
-        if (currentCount === 0) {
-          hasMore = false;
-          break;
-        }
+          const ranking_list = response.data.resp_data.ranking_list || [];
+          const currentCount = ranking_list.length;
 
-        allUsers = allUsers.concat(ranking_list);
-        logger.info(`第 ${index + 1} 页获取 ${currentCount} 个用户，累计 ${allUsers.length} 个用户`);
+          // 如果返回数据为空，说明没有更多数据
+          if (currentCount === 0) {
+            logger.info(`第 ${pageCount + 1} 页返回空数据（index=${index}），翻页结束`);
+            break;
+          }
 
-        // 如果返回数据少于 100 条，说明可能没有更多数据了
-        // 但知识星球 API 的分页机制可能有问题，第 2 页开始就返回失败
-        hasMore = currentCount >= 100;
-        index++;
+          allUsers = allUsers.concat(ranking_list);
+          pageCount++;
+          logger.info(`第 ${pageCount} 页获取 ${currentCount} 个用户，累计 ${allUsers.length} 个用户 (index=${index})`);
 
-        // 防止频繁请求
-        if (hasMore) {
+          // 使用最后一条记录的 rankings 值作为下一页的 index
+          const lastItem = ranking_list[ranking_list.length - 1];
+          index = lastItem.rankings;
+
+          // 防止频繁请求，等待一段时间再请求下一页
           await this.sleep(ZSXQ.REQUEST_DELAY_MS);
+        } catch (error) {
+          // 如果某一页请求失败，记录错误但不中断整个流程
+          logger.warn(`第 ${pageCount + 1} 页请求异常（index=${index}）: ${error.message}，停止翻页`);
+          break;
         }
       }
 

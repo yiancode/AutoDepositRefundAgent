@@ -16,7 +16,8 @@ module.exports = {
     DEFAULT_REQUIRED_DAYS: 7,  // 默认完成天数
     MIN_REQUIRED_DAYS: 1,      // 最小完成天数
     MAX_REQUIRED_DAYS: 365,    // 最大完成天数
-    MAX_DISPLAY_NAMES: 20      // 最多显示合格名单数量
+    MAX_DISPLAY_NAMES: 20,     // 最多显示合格名单数量
+    GRACE_DAYS: parseInt(process.env.GRACE_DAYS) || 1  // 宽限天数（默认1天）
   },
 
   // API 速率限制

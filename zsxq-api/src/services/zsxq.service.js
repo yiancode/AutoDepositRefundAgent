@@ -88,10 +88,15 @@ class ZsxqService {
         return dateB - dateA; // 倒序
       });
 
+      // 获取宽限天数配置
+      const graceDays = require('../config/constants').REFUND.GRACE_DAYS;
+
       return sortedCheckins.map(camp => ({
         checkin_id: camp.checkin_id,
         title: camp.title,
-        checkin_days: camp.checkin_days,
+        checkin_days: camp.checkin_days, // API原始打卡天数
+        actual_checkin_days: camp.checkin_days + graceDays, // 实际打卡天数（加上宽限天数）
+        grace_days: graceDays, // 宽限天数
         status: camp.status,
         joined_count: camp.joined_count,
         expiration_time: camp.validity?.expiration_time || camp.expiration_time,

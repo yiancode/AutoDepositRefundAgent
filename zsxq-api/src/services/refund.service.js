@@ -34,6 +34,10 @@ class RefundService {
       }
 
       // 2. 批量获取用户信息（包含 number）
+      // 应用宽限天数：实际打卡天数 = API返回天数 + 宽限天数
+      const graceDays = REFUND.GRACE_DAYS;
+      logger.info(`应用宽限天数: ${graceDays} 天`);
+
       const refundListWithNumber = await Promise.all(
         rankingList.map(async (user) => {
           let userNumber = null;
@@ -47,14 +51,17 @@ class RefundService {
             // 如果获取失败，保持 number 为 null
           }
 
+          // 应用宽限天数
+          const actualCheckinedDays = user.checkined_days + graceDays;
+
           return {
             planet_user_id: user.planet_user_id,
             planet_number: userNumber, // 星球成员编号
             planet_nickname: user.planet_nickname,
             planet_alias: user.planet_alias,
-            checkined_days: user.checkined_days,
+            checkined_days: actualCheckinedDays, // 实际打卡天数（已加上宽限天数）
             required_days: requiredDays,
-            is_qualified: user.checkined_days >= requiredDays
+            is_qualified: actualCheckinedDays >= requiredDays
           };
         })
       );
@@ -123,6 +130,9 @@ class RefundService {
       }
 
       // 2. 批量获取用户信息（包含 number）
+      // 应用宽限天数：实际打卡天数 = API返回天数 + 宽限天数
+      const graceDays = REFUND.GRACE_DAYS;
+
       const refundListWithNumber = await Promise.all(
         users.map(async (user) => {
           let userNumber = null;
@@ -136,14 +146,17 @@ class RefundService {
             // 如果获取失败，保持 number 为 null
           }
 
+          // 应用宽限天数
+          const actualCheckinedDays = user.checkined_days + graceDays;
+
           return {
             planet_user_id: user.planet_user_id,
             planet_number: userNumber, // 星球成员编号
             planet_nickname: user.planet_nickname,
             planet_alias: user.planet_alias,
-            checkined_days: user.checkined_days,
+            checkined_days: actualCheckinedDays, // 实际打卡天数（已加上宽限天数）
             required_days: requiredDays,
-            is_qualified: user.checkined_days >= requiredDays
+            is_qualified: actualCheckinedDays >= requiredDays
           };
         })
       );

@@ -9,10 +9,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **v0 (简化版)**: Node.js + Express.js,无数据库,纯 API 代理,快速验证核心功能
 - **v1 (完整版)**: Java + Spring Boot + PostgreSQL,完整的生产级系统 (未开始)
 
-**当前状态**: v0 开发中 - Sprint 3 进行中 (85%),即将完成
+**当前状态**: v0 开发中 - Sprint 3 进行中 (90%),即将完成
 
-**最后更新**: 2025-10-28 02:26
-**最后提交**: feat(fullstack): 实现退款名单分页查询和前端滚动加载
+**最后更新**: 2025-10-29 03:07
+**最后提交**: feat(fullstack): 实现打卡天数宽限配置和文案优化
 
 ## 快速命令参考
 
@@ -193,8 +193,9 @@ Mapper (数据库访问 - MyBatis Plus)
 
 **计算流程**:
 1. 调用知识星球 API 获取打卡排行榜
-2. 遍历所有用户,判断 `checkined_days >= requiredDays`
-3. 标记 `is_qualified: true/false`
+2. 应用宽限天数: `实际打卡天数 = API返回天数 + GRACE_DAYS`
+3. 遍历所有用户,判断 `实际打卡天数 >= requiredDays`
+4. 标记 `is_qualified: true/false`
 4. 统计: `total_count`, `qualified_count`, `qualified_rate`
 
 **输出格式**:
@@ -242,6 +243,9 @@ ZSXQ_GROUP_ID=15555411412112
 ZSXQ_X_TIMESTAMP=1730000000
 ZSXQ_AUTHORIZATION=Bearer xxx
 ZSXQ_X_SIGNATURE=xxx
+
+# 打卡天数宽限配置 (可选)
+GRACE_DAYS=1  # 宽限天数，默认1天
 ```
 
 **获取知识星球 Cookie**:

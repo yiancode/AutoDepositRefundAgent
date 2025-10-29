@@ -13,7 +13,7 @@ cd /Users/stinglong/code/github/AutoDepositRefundAgent
 bash setup-dev-env.sh
 ```
 
-如果遇到 npm 权限问题,请参考 [SETUP_MANUAL.md](./SETUP_MANUAL.md) 进行手动配置。
+如果遇到 npm 权限问题,请参考 [SETUP_MANUAL.md](SETUP_MANUAL.md) 进行手动配置。
 
 ---
 

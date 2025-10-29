@@ -27,8 +27,8 @@
         </template>
       </el-table-column>
 
-      <el-table-column prop="checkin_days" label="打卡天数" width="120" align="center">
-        <template #default="{ row }"> {{ row.checkin_days }} 天 </template>
+      <el-table-column prop="actual_checkin_days" label="打卡天数" width="120" align="center">
+        <template #default="{ row }"> {{ row.actual_checkin_days }} 天 </template>
       </el-table-column>
 
       <el-table-column prop="joined_count" label="参与人数" width="120" align="center">
@@ -103,7 +103,7 @@ const goToRefundList = (camp) => {
     params: { checkinId: camp.checkin_id },
     query: {
       title: camp.title,
-      totalDays: camp.checkin_days
+      totalDays: camp.actual_checkin_days // 使用加上宽限天数后的总天数
     }
   });
 };

@@ -131,6 +131,13 @@
         一键复制名单
       </el-button>
     </div>
+
+    <!-- 回到顶部按钮 -->
+    <el-backtop :right="40" :bottom="40" :visibility-height="300">
+      <div class="back-to-top-button">
+        🚀
+      </div>
+    </el-backtop>
   </div>
 </template>
 
@@ -201,7 +208,16 @@ const generateList = async () => {
     await nextTick();
     addScrollListener();
   } catch (error) {
-    ElMessage.error('生成失败:' + error.message);
+    // 提取后端返回的错误信息
+    const errorMsg = error.response?.data?.message || error.message || '生成失败';
+
+    ElMessage({
+      message: errorMsg,
+      type: 'error',
+      duration: 10000, // 显示 10 秒,确保用户看到
+      showClose: true,
+      dangerouslyUseHTMLString: false
+    });
   } finally {
     loading.value = false;
   }
@@ -529,5 +545,24 @@ onUnmounted(() => {
   .export-bar .el-button {
     width: 100%;
   }
+}
+
+.back-to-top-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 50px;
+  height: 50px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 50%;
+  font-size: 24px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.back-to-top-button:hover {
+  transform: translateY(-5px) scale(1.1);
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.6);
 }
 </style>

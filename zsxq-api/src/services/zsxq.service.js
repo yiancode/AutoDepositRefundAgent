@@ -187,46 +187,104 @@ class ZsxqService {
       let index = 0;
       let pageCount = 0;
       const maxPages = 100; // 最多支持 100 页，确保能获取所有数据
+      const maxRetries = 3; // 每页最多重试 3 次
+      let consecutiveEmptyPages = 0; // 连续空页计数
+      const maxConsecutiveEmptyPages = 2; // 连续 2 页为空才停止
+      let isDataComplete = true; // 数据完整性标志
 
       // 自动翻页，使用 rankings 值作为下一页的 index
       while (pageCount < maxPages) {
         const url = `/groups/${this.groupId}/checkins/${checkinId}/ranking_list`;
+        let retryCount = 0;
+        let pageSuccess = false;
 
-        try {
-          const response = await this.axios.get(url, {
-            params: { type: 'accumulated', index },
-            headers: this.getHeaders()
-          });
+        // 重试机制：单页失败时重试
+        while (retryCount < maxRetries && !pageSuccess) {
+          try {
+            const response = await this.axios.get(url, {
+              params: { type: 'accumulated', index },
+              headers: this.getHeaders()
+            });
 
-          if (!response.data.succeeded) {
-            logger.warn(`第 ${pageCount + 1} 页请求失败（index=${index}），停止翻页`);
-            break;
+            if (!response.data.succeeded) {
+              retryCount++;
+              if (retryCount < maxRetries) {
+                logger.warn(`第 ${pageCount + 1} 页请求失败（index=${index}），重试 ${retryCount}/${maxRetries}`);
+                await this.sleep(ZSXQ.REQUEST_DELAY_MS * retryCount); // 递增等待时间
+                continue;
+              } else {
+                logger.error(`第 ${pageCount + 1} 页请求失败（index=${index}），已达最大重试次数`);
+                isDataComplete = false; // 标记数据不完整
+                break;
+              }
+            }
+
+            const ranking_list = response.data.resp_data.ranking_list || [];
+            const currentCount = ranking_list.length;
+
+            // 如果返回数据为空，累计空页计数
+            if (currentCount === 0) {
+              consecutiveEmptyPages++;
+              logger.info(`第 ${pageCount + 1} 页返回空数据（index=${index}），连续空页: ${consecutiveEmptyPages}/${maxConsecutiveEmptyPages}`);
+
+              // 连续 N 页为空才真正停止
+              if (consecutiveEmptyPages >= maxConsecutiveEmptyPages) {
+                logger.info(`连续 ${consecutiveEmptyPages} 页返回空数据，翻页结束`);
+                pageSuccess = true; // 标记为成功以退出重试循环
+                break;
+              }
+
+              // 尝试跳过这一页，继续获取下一页
+              index += 21; // 知识星球每页约 21 条数据
+              pageCount++;
+              pageSuccess = true;
+              await this.sleep(ZSXQ.REQUEST_DELAY_MS);
+              continue;
+            }
+
+            // 获取到数据，重置空页计数
+            consecutiveEmptyPages = 0;
+            allUsers = allUsers.concat(ranking_list);
+            pageCount++;
+            logger.info(`第 ${pageCount} 页获取 ${currentCount} 个用户，累计 ${allUsers.length} 个用户 (index=${index})`);
+
+            // 使用最后一条记录的 rankings 值作为下一页的 index
+            const lastItem = ranking_list[ranking_list.length - 1];
+            index = lastItem.rankings;
+
+            pageSuccess = true;
+
+            // 防止频繁请求，等待一段时间再请求下一页
+            await this.sleep(ZSXQ.REQUEST_DELAY_MS);
+          } catch (error) {
+            retryCount++;
+            if (retryCount < maxRetries) {
+              logger.warn(`第 ${pageCount + 1} 页请求异常（index=${index}）: ${error.message}，重试 ${retryCount}/${maxRetries}`);
+              await this.sleep(ZSXQ.REQUEST_DELAY_MS * retryCount); // 递增等待时间
+            } else {
+              logger.error(`第 ${pageCount + 1} 页请求异常（index=${index}）: ${error.message}，已达最大重试次数`);
+              isDataComplete = false; // 标记数据不完整
+              break;
+            }
           }
+        }
 
-          const ranking_list = response.data.resp_data.ranking_list || [];
-          const currentCount = ranking_list.length;
-
-          // 如果返回数据为空，说明没有更多数据
-          if (currentCount === 0) {
-            logger.info(`第 ${pageCount + 1} 页返回空数据（index=${index}），翻页结束`);
-            break;
-          }
-
-          allUsers = allUsers.concat(ranking_list);
-          pageCount++;
-          logger.info(`第 ${pageCount} 页获取 ${currentCount} 个用户，累计 ${allUsers.length} 个用户 (index=${index})`);
-
-          // 使用最后一条记录的 rankings 值作为下一页的 index
-          const lastItem = ranking_list[ranking_list.length - 1];
-          index = lastItem.rankings;
-
-          // 防止频繁请求，等待一段时间再请求下一页
-          await this.sleep(ZSXQ.REQUEST_DELAY_MS);
-        } catch (error) {
-          // 如果某一页请求失败，记录错误但不中断整个流程
-          logger.warn(`第 ${pageCount + 1} 页请求异常（index=${index}）: ${error.message}，停止翻页`);
+        // 如果单页重试失败，停止整个翻页
+        if (!pageSuccess) {
           break;
         }
+
+        // 如果连续空页达到上限，停止翻页
+        if (consecutiveEmptyPages >= maxConsecutiveEmptyPages) {
+          break;
+        }
+      }
+
+      // 检查数据完整性
+      if (!isDataComplete) {
+        const errorMsg = `数据获取不完整：仅获取到 ${allUsers.length} 个用户，部分页面请求失败。请稍后重试或联系管理员。`;
+        logger.error(errorMsg);
+        throw new Error(errorMsg);
       }
 
       logger.info(`成功获取 ${allUsers.length} 个用户的打卡记录`);

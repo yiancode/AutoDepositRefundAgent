@@ -9,10 +9,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **v0 (简化版)**: Node.js + Express.js,无数据库,纯 API 代理,快速验证核心功能
 - **v1 (完整版)**: Java + Spring Boot + PostgreSQL,完整的生产级系统 (未开始)
 
-**当前状态**: v0 开发中 - Sprint 3 进行中 (90%),即将完成
+**当前状态**: v0 开发中 - Sprint 3 进行中 (95%),即将完成
 
-**最后更新**: 2025-10-29 03:07
-**最后提交**: feat(fullstack): 实现打卡天数宽限配置和文案优化
+**最后更新**: 2025-10-30 21:35
+**最后提交**: feat(fullstack): 增强数据获取稳定性和用户体验优化
 
 ## 快速命令参考
 

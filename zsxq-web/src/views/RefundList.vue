@@ -33,7 +33,7 @@
     <!-- 统计信息 -->
     <el-row :gutter="20" class="stats-row" v-if="statistics">
       <el-col :span="6">
-        <el-statistic title="总人数" :value="statistics.total_count">
+        <el-statistic title="打卡总人数" :value="statistics.total_count">
           <template #suffix>人</template>
         </el-statistic>
       </el-col>
@@ -108,7 +108,7 @@
     <el-card class="names-card" v-if="statistics && statistics.qualified_names">
       <template #header>
         <div class="card-header">
-          <span>合格名单(逗号分隔)</span>
+          <span>合格名单(顿号分隔)</span>
         </div>
       </template>
       <div class="names-text">
@@ -320,7 +320,7 @@ const exportText = () => {
   // 创建文本内容
   const textContent = `训练营:${campTitle.value}
 完成要求:${form.value.requiredDays} 天
-总人数:${statistics.value.total_count} 人
+打卡总人数:${statistics.value.total_count} 人
 合格人数:${statistics.value.qualified_count} 人
 不合格人数:${statistics.value.unqualified_count} 人
 合格率:${statistics.value.qualified_rate}%

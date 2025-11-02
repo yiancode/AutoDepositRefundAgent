@@ -104,16 +104,27 @@
     <!-- 空状态 -->
     <el-empty v-if="!loading && refundList.length === 0" description="点击'生成退款名单'按钮开始" />
 
-    <!-- 合格名单(文本格式) -->
-    <el-card class="names-card" v-if="statistics && statistics.qualified_names">
+    <!-- 名单分栏(合格/不合格) -->
+    <el-card class="names-card" v-if="statistics">
       <template #header>
         <div class="card-header">
-          <span>合格名单(顿号分隔)</span>
+          <span>打卡明细</span>
         </div>
       </template>
-      <div class="names-text">
-        {{ statistics.qualified_names }}
-      </div>
+      <el-tabs v-model="activeTab" class="names-tabs">
+        <el-tab-pane label="不合格名单" name="unqualified">
+          <div class="names-text" v-if="unqualifiedNamesText">
+            {{ unqualifiedNamesText }}
+          </div>
+          <el-empty v-else description="暂无不合格人员" :image-size="80" />
+        </el-tab-pane>
+        <el-tab-pane label="合格名单" name="qualified">
+          <div class="names-text" v-if="statistics.qualified_names">
+            {{ statistics.qualified_names }}
+          </div>
+          <el-empty v-else description="暂无合格人员" :image-size="80" />
+        </el-tab-pane>
+      </el-tabs>
     </el-card>
 
     <!-- 导出操作栏 -->
@@ -164,7 +175,9 @@ const form = ref({
   requiredDays: 7 // 默认要求完成 7 天
 });
 const refundList = ref([]);
+const allRefundData = ref([]); // 存储所有退款数据
 const statistics = ref(null);
+const activeTab = ref('unqualified'); // 默认显示不合格名单
 
 // 分页状态
 const pagination = ref({
@@ -173,10 +186,27 @@ const pagination = ref({
   hasMore: false
 });
 
+// 计算不合格人员名单文本(顿号分隔)
+const unqualifiedNamesText = computed(() => {
+  if (!allRefundData.value || allRefundData.value.length === 0) {
+    return '';
+  }
+
+  const unqualifiedUsers = allRefundData.value.filter(user => !user.is_qualified);
+  if (unqualifiedUsers.length === 0) {
+    return '';
+  }
+
+  return unqualifiedUsers
+    .map(user => user.planet_nickname)
+    .join('、');
+});
+
 // 生成退款名单（首次加载）
 const generateList = async () => {
   loading.value = true;
   refundList.value = []; // 清空已有数据
+  allRefundData.value = []; // 清空完整数据
   pagination.value.currentIndex = 0; // 重置分页
 
   try {
@@ -186,18 +216,16 @@ const generateList = async () => {
     });
 
     // 设置数据
-    const allData = data.refund_list || [];
+    allRefundData.value = data.refund_list || [];
     statistics.value = data.statistics;
 
     // 只显示第一页数据
-    refundList.value = allData.slice(0, pagination.value.pageSize);
+    refundList.value = allRefundData.value.slice(0, pagination.value.pageSize);
 
     // 设置分页状态
-    if (allData.length > pagination.value.pageSize) {
+    if (allRefundData.value.length > pagination.value.pageSize) {
       pagination.value.hasMore = true;
       pagination.value.currentIndex = pagination.value.pageSize;
-      // 保存所有数据供后续分页使用
-      refundList.allData = allData;
     } else {
       pagination.value.hasMore = false;
     }
@@ -234,17 +262,16 @@ const loadMore = () => {
   // 使用 setTimeout 模拟异步加载，优化用户体验
   setTimeout(() => {
     try {
-      const allData = refundList.allData || [];
       const start = pagination.value.currentIndex;
       const end = start + pagination.value.pageSize;
 
       // 从缓存的完整数据中截取下一页
-      const nextPageData = allData.slice(start, end);
+      const nextPageData = allRefundData.value.slice(start, end);
       refundList.value.push(...nextPageData);
 
       // 更新分页状态
       pagination.value.currentIndex = end;
-      pagination.value.hasMore = end < allData.length;
+      pagination.value.hasMore = end < allRefundData.value.length;
     } catch (error) {
       console.error('加载更多失败:', error);
     } finally {
@@ -280,31 +307,31 @@ const removeScrollListener = () => {
   }
 };
 
-// 一键复制合格名单
+// 一键复制名单（根据当前 Tab 复制对应名单）
 const copyQualifiedList = async () => {
-  if (!refundList.value || refundList.value.length === 0) {
+  if (!allRefundData.value || allRefundData.value.length === 0) {
     ElMessage.warning('暂无数据可复制');
     return;
   }
 
-  // 从完整数据中筛选合格人员
-  const allData = refundList.allData || refundList.value;
-  const qualifiedUsers = allData.filter(user => user.is_qualified);
+  // 从完整数据中筛选目标人员
+  const isQualified = activeTab.value === 'qualified'; // 判断当前 Tab
+  const targetUsers = allRefundData.value.filter(user => user.is_qualified === isQualified);
 
-  if (qualifiedUsers.length === 0) {
-    ElMessage.warning('暂无合格人员');
+  if (targetUsers.length === 0) {
+    ElMessage.warning(`暂无${isQualified ? '合格' : '不合格'}人员`);
     return;
   }
 
   // 生成格式：姓名(编号),姓名2(编号2)
-  const copyText = qualifiedUsers
+  const copyText = targetUsers
     .map(user => `${user.planet_nickname}(${user.planet_number || user.planet_user_id})`)
     .join(',');
 
   try {
     // 使用 Clipboard API 复制到剪贴板
     await navigator.clipboard.writeText(copyText);
-    ElMessage.success(`已复制 ${qualifiedUsers.length} 位合格人员名单`);
+    ElMessage.success(`已复制 ${targetUsers.length} 位${isQualified ? '合格' : '不合格'}人员名单`);
   } catch (error) {
     // 降级方案：使用传统方法复制
     const textarea = document.createElement('textarea');
@@ -316,7 +343,7 @@ const copyQualifiedList = async () => {
 
     try {
       document.execCommand('copy');
-      ElMessage.success(`已复制 ${qualifiedUsers.length} 位合格人员名单`);
+      ElMessage.success(`已复制 ${targetUsers.length} 位${isQualified ? '合格' : '不合格'}人员名单`);
     } catch (err) {
       ElMessage.error('复制失败，请手动复制');
       console.error('复制失败:', err);
@@ -457,6 +484,10 @@ onUnmounted(() => {
   margin-top: 20px;
 }
 
+.names-tabs {
+  margin-top: 12px;
+}
+
 .names-text {
   padding: 12px;
   background-color: #f5f7fa;
@@ -464,6 +495,7 @@ onUnmounted(() => {
   line-height: 1.8;
   color: #606266;
   word-break: break-all;
+  min-height: 100px;
 }
 
 .load-more-tip {

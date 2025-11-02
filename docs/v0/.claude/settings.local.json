@@ -11,7 +11,10 @@
       "Bash(npm create:*)",
       "Bash(git rev-parse:*)",
       "Bash(find:*)",
-      "Bash(awk:*)"
+      "Bash(awk:*)",
+      "Read(//Volumes/SSD/ssd-code/github/AutoDepositRefundAgent/**)",
+      "WebSearch",
+      "WebFetch(domain:pay.weixin.qq.com)"
     ],
     "deny": [],
     "ask": []

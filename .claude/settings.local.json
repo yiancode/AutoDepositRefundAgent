@@ -39,7 +39,11 @@
       "Bash(ping:*)",
       "Bash(for i in 1 2 3)",
       "Bash(do curl -s -X POST 'http://localhost:3013/api/camps/8424481182/refund-list' -H 'Content-Type: application/json' -d '{\"\"required_days\"\":7}')",
-      "Bash(echo:*)"
+      "Bash(echo:*)",
+      "Bash(npm run pm2:stop:*)",
+      "Bash(do echo -n \"第 $i 次测试: \")",
+      "WebFetch(domain:developer.work.weixin.qq.com)",
+      "mcp__brave-search__brave_web_search"
     ],
     "deny": [],
     "ask": []

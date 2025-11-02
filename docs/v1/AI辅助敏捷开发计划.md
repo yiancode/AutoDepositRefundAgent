@@ -125,8 +125,7 @@ backend/
      "message": "成功",
      "data": {},
      "timestamp": 1234567890
-   }
-   ```
+   }```
 
 3. 全局异常处理：
    - ValidationException → 400
@@ -411,8 +410,7 @@ application.yml 添加：
 ```yaml
 jwt:
   secret: your-secret-key-change-in-production
-  expiration: 604800  # 7 天（秒）
-```
+  expiration: 604800  # 7 天（秒）```
 
 【验收标准】
 1. 访问 /api/admin/** 未携带 Token → 返回 401
@@ -531,8 +529,7 @@ export const useUserStore = defineStore('user', () => {
   }
 
   return { token, userInfo, login, logout }
-})
-```
+})```
 
 【验收标准】
 1. 登录成功后跳转到仪表盘
@@ -599,8 +596,7 @@ training_camp 表（已存在）：
      "end_date": "2024-01-21",
      "required_days": 18,
      "group_qrcode": "https://xxx.png"
-   }
-   ```
+   }```
    响应：{"code": 200, "data": {...}}
 
 2. GET /api/admin/camps?status=active&page=1&size=10
@@ -756,8 +752,7 @@ private String getConfig(String key) {
 }
 
 // 使用示例
-String appid = getConfig("wechat.pay.appid");
-```
+String appid = getConfig("wechat.pay.appid");```
 
 【验收标准】
 1. 能成功调用企业微信支付 API（需要测试环境密钥）
@@ -829,8 +824,7 @@ String lockKey = "payment:callback:" + out_trade_no;
 if (!redisTemplate.opsForValue().setIfAbsent(lockKey, "1", 5, TimeUnit.MINUTES)) {
     log.warn("重复回调: {}", out_trade_no);
     return;
-}
-```
+}```
 
 【验收标准】
 1. 创建支付成功，返回支付参数
@@ -909,8 +903,7 @@ if (!redisTemplate.opsForValue().setIfAbsent(lockKey, "1", 5, TimeUnit.MINUTES))
       }
     ]
   }
-}
-```
+}```
 
 【验收标准】
 1. 能成功获取知识星球数据
@@ -966,8 +959,7 @@ if (!redisTemplate.opsForValue().setIfAbsent(lockKey, "1", 5, TimeUnit.MINUTES))
 @EnableScheduling
 public class CampApplication {
     // ...
-}
-```
+}```
 
 【验收标准】
 1. 定时任务能正常执行
@@ -1073,8 +1065,7 @@ private void match(CampMember member, PlanetUser user, int confidence) {
     member.setMatchStatus("已匹配");
     member.setMatchConfidence(confidence);
     memberMapper.updateById(member);
-}
-```
+}```
 
 【手动匹配】
 ```java
@@ -1084,8 +1075,7 @@ public void manualMatch(Long memberId, Long planetUserId) {
     member.setMatchStatus("已匹配");
     member.setMatchConfidence(100);  // 手动匹配置信度100%
     memberMapper.updateById(member);
-}
-```
+}```
 
 【验收标准】
 1. 自动匹配能正确识别高置信度匹配
@@ -1215,8 +1205,7 @@ public class RefundService {
             refundMapper.updateById(record);
         }
     }
-}
-```
+}```
 
 【验收标准】
 1. 能正确生成退款列表
@@ -1257,8 +1246,7 @@ public class RefundService {
      "active_camps": 10,
      "total_members": 5000,
      "total_refund_amount": 50000.00
-   }
-   ```
+   }```
 
 2. GET /api/admin/statistics/camp/{id}
    响应：
@@ -1269,8 +1257,7 @@ public class RefundService {
      "qualified_count": 85,
      "refund_rate": 0.85,
      "checkin_trend": [10, 15, 20, ...]  // 每日打卡人数
-   }
-   ```
+   }```
 
 【需要创建的类】
 1. StatisticsVO.java（视图对象）
@@ -1338,8 +1325,7 @@ public class RefundService {
 @RateLimit(key = "api:login", limit = 10, period = 60)
 public Result login(String username, String password) {
     // ...
-}
-```
+}```
 
 【Lua 脚本】
 ```lua
@@ -1354,8 +1340,7 @@ else
     redis.call('INCRBY', key, 1)
     redis.call('EXPIRE', key, period)
     return 1  -- 允许通过
-end
-```
+end```
 
 【验收标准】
 1. 超过限流阈值 → 返回 429 Too Many Requests

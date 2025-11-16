@@ -30,6 +30,29 @@
       </div>
     </el-card>
 
+    <!-- 名单分栏(合格/不合格) - 只显示人员名称 -->
+    <el-card class="names-card" v-if="statistics" v-loading="loading">
+      <template #header>
+        <div class="card-header">
+          <span>打卡明细</span>
+        </div>
+      </template>
+      <el-tabs v-model="activeTab" class="names-tabs">
+        <el-tab-pane label="合格名单" name="qualified">
+          <div class="names-text" v-if="statistics.qualified_names">
+            {{ statistics.qualified_names }}
+          </div>
+          <el-empty v-else description="暂无合格人员" :image-size="80" />
+        </el-tab-pane>
+        <el-tab-pane label="不合格名单" name="unqualified">
+          <div class="names-text" v-if="unqualifiedNamesText">
+            {{ unqualifiedNamesText }}
+          </div>
+          <el-empty v-else description="暂无不合格人员" :image-size="80" />
+        </el-tab-pane>
+      </el-tabs>
+    </el-card>
+
     <!-- 统计信息 -->
     <el-row :gutter="20" class="stats-row" v-if="statistics">
       <el-col :span="6">
@@ -54,14 +77,21 @@
       </el-col>
     </el-row>
 
-    <!-- 退款名单表格 -->
+    <!-- 查看详细打卡名单按钮 -->
+    <div v-if="statistics && !showDetails" class="show-details-btn-wrapper">
+      <el-button type="primary" plain @click="showDetails = true">
+        查看详细打卡名单
+      </el-button>
+    </div>
+
+    <!-- 退款名单表格 - 默认隐藏,点击按钮后显示 -->
     <el-table
       :data="refundList"
       v-loading="loading"
       stripe
       border
       style="width: 100%; margin-top: 20px"
-      v-if="refundList.length > 0"
+      v-if="showDetails && refundList.length > 0"
     >
       <el-table-column type="index" label="序号" width="60" align="center" />
 
@@ -88,7 +118,7 @@
     </el-table>
 
     <!-- 加载更多提示 -->
-    <div v-if="refundList.length > 0" class="load-more-tip">
+    <div v-if="showDetails && refundList.length > 0" class="load-more-tip">
       <div v-if="loadingMore" class="loading-text">
         <el-icon class="is-loading"><Loading /></el-icon>
         <span>加载中...</span>
@@ -102,30 +132,7 @@
     </div>
 
     <!-- 空状态 -->
-    <el-empty v-if="!loading && refundList.length === 0" description="点击'生成退款名单'按钮开始" />
-
-    <!-- 名单分栏(合格/不合格) -->
-    <el-card class="names-card" v-if="statistics">
-      <template #header>
-        <div class="card-header">
-          <span>打卡明细</span>
-        </div>
-      </template>
-      <el-tabs v-model="activeTab" class="names-tabs">
-        <el-tab-pane label="不合格名单" name="unqualified">
-          <div class="names-text" v-if="unqualifiedNamesText">
-            {{ unqualifiedNamesText }}
-          </div>
-          <el-empty v-else description="暂无不合格人员" :image-size="80" />
-        </el-tab-pane>
-        <el-tab-pane label="合格名单" name="qualified">
-          <div class="names-text" v-if="statistics.qualified_names">
-            {{ statistics.qualified_names }}
-          </div>
-          <el-empty v-else description="暂无合格人员" :image-size="80" />
-        </el-tab-pane>
-      </el-tabs>
-    </el-card>
+    <el-empty v-if="!loading && (!statistics || refundList.length === 0)" description="点击'生成退款名单'按钮开始" />
 
     <!-- 导出操作栏 -->
     <div v-if="refundList.length > 0" class="export-bar">
@@ -177,7 +184,8 @@ const form = ref({
 const refundList = ref([]);
 const allRefundData = ref([]); // 存储所有退款数据
 const statistics = ref(null);
-const activeTab = ref('unqualified'); // 默认显示不合格名单
+const activeTab = ref('qualified'); // 默认显示合格名单
+const showDetails = ref(false); // 控制打卡明细显示/隐藏
 
 // 分页状态
 const pagination = ref({
@@ -208,6 +216,7 @@ const generateList = async () => {
   refundList.value = []; // 清空已有数据
   allRefundData.value = []; // 清空完整数据
   pagination.value.currentIndex = 0; // 重置分页
+  showDetails.value = false; // 重置打卡明细显示状态
 
   try {
     // 使用全量接口获取完整数据和统计信息
@@ -529,6 +538,12 @@ onUnmounted(() => {
   margin-top: 24px;
   padding-top: 24px;
   border-top: 1px solid #ebeef5;
+}
+
+.show-details-btn-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-top: 24px;
 }
 
 /* 响应式布局 */

@@ -43,7 +43,9 @@
       "Bash(npm run pm2:stop:*)",
       "Bash(do echo -n \"第 $i 次测试: \")",
       "WebFetch(domain:developer.work.weixin.qq.com)",
-      "mcp__brave-search__brave_web_search"
+      "mcp__brave-search__brave_web_search",
+      "Bash(git pull:*)",
+      "Bash(git stash:*)"
     ],
     "deny": [],
     "ask": []

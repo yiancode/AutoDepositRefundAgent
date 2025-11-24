@@ -1,0 +1,335 @@
+# v0.2 版本 - 退款文件生成功能
+
+## 版本概述
+
+**v0.2** 版本在 v0 基础上新增**退款文件生成**功能，实现从报名支付到自动退款的完整闭环。
+
+### 核心目标
+
+支持管理员一键生成符合微信支付批量退款格式的 CSV 文件，自动匹配支付订单与知识星球用户。
+
+### 关键特性
+
+- ✅ **支付映射存储**：使用 SQLite 轻量级数据库存储支付订单与用户映射关系
+- ✅ **智能匹配算法**：多维度匹配算法（昵称、时间、金额）
+- ✅ **三重保障机制**：数据库查询 → AI 匹配 → 人工审核
+- ✅ **高自动化率**：预计 90%+ 自动匹配成功率
+- ✅ **批量退款文件**：生成符合微信支付规范的 CSV 格式文件
+
+## 技术架构
+
+### 技术栈
+
+| 组件 | 技术 | 说明 |
+|------|------|------|
+| 数据存储 | SQLite 3 (better-sqlite3) | 轻量级关系型数据库 |
+| 匹配算法 | 自研多维度算法 | 昵称 + 时间 + 金额综合评分 |
+| 微信支付 API | 企业微信支付 v3 | 获取交易账单 |
+| 文件生成 | CSV | 符合微信批量退款格式 |
+
+### 架构演进
+
+```
+v0 (无数据库)
+    ↓
+v0.2 (+ SQLite 存储支付映射)
+    ↓
+v1 (完整 PostgreSQL + Redis + Java)
+```
+
+## 核心功能
+
+### 1. 支付映射存储
+
+**触发时机**：用户完成微信支付后的 Webhook 回调
+
+**存储内容**：
+- 商户订单号
+- 微信支付单号
+- 知识星球用户 ID
+- 知识星球昵称
+- 微信昵称
+- 支付金额
+- 训练营 ID
+- 支付时间
+
+### 2. 智能匹配算法
+
+**三层匹配策略**：
+
+1. **数据库直接匹配** (置信度 100%)
+   - 从 SQLite 查询支付映射记录
+   - 准确率最高，优先使用
+
+2. **AI 智能匹配** (置信度 50-99%)
+   - 昵称匹配 (权重 60%)
+   - 时间匹配 (权重 20%)
+   - 金额匹配 (权重 20%)
+
+3. **人工审核** (置信度 < 80%)
+   - 低置信度结果需人工确认
+   - 提供匹配详情供管理员判断
+
+### 3. 退款文件生成
+
+**输出格式**：符合微信支付批量退款 CSV 格式
+
+```csv
+商户订单号,退款金额,退款原因,商户退款单号
+T6602J-0P263Y7-32OM,99.00,完成打卡,REFUND_T6602J-0P263Y7-32OM
+T60NCB-0P263Y7-6CGZ,99.00,完成打卡,REFUND_T60NCB-0P263Y7-6CGZ
+```
+
+## API 接口
+
+### 1. 保存支付映射
+
+```
+POST /api/payment/mapping
+```
+
+**请求体**：
+```json
+{
+  "out_trade_no": "T6602J-0P263Y7-32OM",
+  "transaction_id": "4200002964202511238191552217",
+  "planet_user_id": "88455815452182",
+  "planet_nickname": "球球的副业探索路",
+  "wechat_nickname": "球球",
+  "amount": 9900,
+  "checkin_id": "842448118",
+  "payment_time": "2025-11-01T14:06:00Z"
+}
+```
+
+### 2. 生成退款文件
+
+```
+POST /api/camps/:checkinId/refund-file
+```
+
+**请求体**：
+```json
+{
+  "required_days": 7
+}
+```
+
+**响应**：
+```json
+{
+  "code": 200,
+  "message": "退款文件生成成功",
+  "data": {
+    "csv_url": "/downloads/refund_842448118_1732435200000.csv",
+    "statistics": {
+      "total_qualified": 85,
+      "auto_matched": 78,
+      "ai_matched": 5,
+      "need_manual_review": 2,
+      "failed": 2
+    },
+    "need_review": [
+      {
+        "planet_user_id": "88888888",
+        "planet_nickname": "小明",
+        "out_trade_no": "T6602J-0P263Y7-XXXX",
+        "confidence": 65,
+        "reason": "昵称部分匹配"
+      }
+    ],
+    "failed": [
+      {
+        "planet_user_id": "88777777",
+        "planet_nickname": "李四",
+        "reason": "未找到匹配的支付记录"
+      }
+    ]
+  }
+}
+```
+
+### 3. 人工审核确认
+
+```
+POST /api/refund/review
+```
+
+**请求体**：
+```json
+{
+  "planet_user_id": "88888888",
+  "out_trade_no": "T6602J-0P263Y7-XXXX",
+  "action": "approve"
+}
+```
+
+## 数据库设计
+
+详见：[数据库设计.md](./数据库设计.md)
+
+## 用户旅程
+
+详见：[用户旅程图.md](./用户旅程图.md)
+
+## 开发计划
+
+### Phase 1: 基础功能 (2 天)
+
+- [ ] SQLite 数据库集成
+- [ ] payment_mapping 表创建
+- [ ] 支付映射保存 API
+- [ ] 基础查询功能
+
+### Phase 2: 智能匹配 (3 天)
+
+- [ ] 微信支付账单 API 集成
+- [ ] 多维度匹配算法实现
+- [ ] 置信度评分系统
+- [ ] 匹配结果缓存优化
+
+### Phase 3: 文件生成 (2 天)
+
+- [ ] CSV 文件生成器
+- [ ] 退款文件下载接口
+- [ ] 批量处理优化
+- [ ] 错误处理和重试机制
+
+### Phase 4: 管理后台 (3 天)
+
+- [ ] 退款名单页面
+- [ ] 人工审核界面
+- [ ] 统计报表展示
+- [ ] 导出功能
+
+## 部署说明
+
+### 环境要求
+
+```bash
+# 基础环境（继承 v0）
+Node.js 18+
+Redis 7+ (可选)
+
+# 新增依赖
+SQLite 3 (通过 better-sqlite3)
+```
+
+### 安装步骤
+
+```bash
+# 1. 安装依赖
+cd zsxq-api
+npm install better-sqlite3
+
+# 2. 创建数据目录
+mkdir -p data
+
+# 3. 初始化数据库（自动创建）
+npm run init-db
+
+# 4. 启动服务
+npm run dev
+```
+
+### 配置说明
+
+**.env 新增配置**：
+
+```env
+# SQLite 数据库路径
+DB_PATH=./data/payment-mapping.db
+
+# 智能匹配阈值
+MATCH_CONFIDENCE_THRESHOLD=50
+
+# 微信支付 API 配置
+WECHAT_PAY_MCHID=1800001791
+WECHAT_PAY_API_KEY=your_api_key
+WECHAT_PAY_CERT_PATH=./certs/apiclient_cert.pem
+WECHAT_PAY_KEY_PATH=./certs/apiclient_key.pem
+```
+
+## 测试指南
+
+### 单元测试
+
+```bash
+npm run test:unit
+```
+
+### 集成测试
+
+```bash
+# 测试支付映射保存
+npm run test:integration -- payment-mapping
+
+# 测试智能匹配算法
+npm run test:integration -- smart-matching
+
+# 测试文件生成
+npm run test:integration -- refund-file
+```
+
+### 手动测试流程
+
+1. **测试支付映射保存**
+   ```bash
+   curl -X POST http://localhost:3013/api/payment/mapping \
+     -H "Content-Type: application/json" \
+     -d @test/fixtures/payment-mapping.json
+   ```
+
+2. **测试退款文件生成**
+   ```bash
+   curl -X POST http://localhost:3013/api/camps/842448118/refund-file \
+     -H "Content-Type: application/json" \
+     -d '{"required_days": 7}'
+   ```
+
+3. **验证 CSV 文件格式**
+   ```bash
+   cat downloads/refund_842448118_*.csv
+   ```
+
+## 已知限制
+
+1. **微信支付账单延迟**：交易账单通常在次日 9:00 后才能下载
+2. **匹配准确率**：AI 匹配准确率约 85-95%，需人工审核确认
+3. **批量处理限制**：单次最多处理 10,000 条退款记录
+4. **数据库大小**：SQLite 适合中小规模（< 100万条记录）
+
+## 版本对比
+
+| 特性 | v0 | v0.2 | v1 |
+|------|----|----|-----|
+| 退款名单生成 | ✅ | ✅ | ✅ |
+| 支付订单匹配 | ❌ | ✅ | ✅ |
+| 批量退款文件 | ❌ | ✅ | ✅ |
+| 自动退款执行 | ❌ | ❌ | ✅ |
+| 数据库 | 无 | SQLite | PostgreSQL |
+| 智能匹配 | ❌ | ✅ | ✅ (更强) |
+| 人工审核 | ❌ | ✅ | ✅ |
+
+## 相关文档
+
+- [用户旅程图](./用户旅程图.md) - 完整的用户流程图
+- [混合方案技术设计](./混合方案技术设计.md) - 详细技术方案
+- [数据库设计](./数据库设计.md) - SQLite 表结构设计
+- [智能匹配算法](./智能匹配算法.md) - 匹配算法详解
+
+## 下一步计划
+
+v0.2 完成后，将评估是否直接进入 v1 开发，或继续优化 v0.2：
+
+**可能的 v0.3 功能**：
+- 自动退款执行（调用微信支付 API）
+- 退款状态跟踪
+- 失败重试机制
+- 更完善的管理后台
+
+**或直接跳到 v1**：
+- 完整的 Java + Spring Boot 架构
+- PostgreSQL + Redis
+- 企业微信通知
+- 完整的权限管理

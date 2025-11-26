@@ -53,11 +53,9 @@
             type="primary"
             size="small"
             @click="goToRefundList(row)"
-            v-if="row.status === 'over' || row.status === 'closed'"
           >
             生成名单
           </el-button>
-          <el-button type="info" size="small" disabled v-else> 进行中 </el-button>
         </template>
       </el-table-column>
     </el-table>

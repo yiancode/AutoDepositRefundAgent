@@ -4,15 +4,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 项目概述
 
-**知识星球训练营自动押金退款系统** - 采用双版本并行开发策略:
+**知识星球训练营自动押金退款系统** - 采用渐进式开发策略:
 
 - **v0 (已完成)**: Node.js + Express.js,无数据库,纯 API 代理,快速验证核心功能
-- **v1 (设计中)**: Java + Spring Boot + PostgreSQL,完整的生产级系统
+- **v0.2 (设计完成)**: 在 v0 基础上新增退款文件生成功能,使用 SQLite 存储支付映射
+- **v1 (规划中)**: Java + Spring Boot + PostgreSQL,完整的生产级系统
 
-**当前状态**: v0 版本已完成基础功能,v1 版本前端设计完成,正在进行技术方案设计
+**当前状态**: v0 版本已完成基础功能,v0.2 版本设计完成待开发 (见 `docs/v0.2/`)
 
 **关键特性**:
 - v0 无数据库、无状态服务 - 所有数据实时从知识星球 API 获取
+- v0.2 新增 SQLite 存储支付订单映射,支持智能匹配生成退款 CSV 文件
 - 实时计算退款名单,不持久化数据
 - 前后端分离架构
 
@@ -27,7 +29,7 @@ cd zsxq-api
 npm run dev              # 启动在 http://localhost:3013
 
 # 测试
-npm test                 # 运行所有测试
+npm test                 # 运行所有测试 (Jest)
 npm run test:watch       # 监听模式
 npm run test:unit        # 单元测试
 npm run test:integration # 集成测试
@@ -56,9 +58,19 @@ open http://localhost:3013/api-docs
 ```bash
 cd zsxq-web
 
+# 开发环境
 npm run dev              # 开发环境 (http://localhost:5173)
 npm run build            # 生产构建
 npm run preview          # 预览生产构建
+
+# 测试 (Vitest)
+npm run test             # 运行测试
+npm run test:ui          # UI 模式
+npm run test:coverage    # 覆盖率报告
+
+# 代码质量
+npm run lint             # ESLint 检查
+npm run format           # Prettier 格式化
 ```
 
 ### v1 版本 (未开始)
@@ -119,6 +131,9 @@ zsxq-api/
 │       ├── swagger.js            # API 文档配置
 │       ├── redis.config.js       # Redis 配置
 │       └── constants.js          # 常量定义
+├── __tests__/                    # 测试目录
+│   ├── unit/                     # 单元测试 (*.unit.test.js)
+│   └── integration/              # 集成测试 (*.integration.test.js)
 ├── .env                          # 环境变量 (知识星球凭证)
 ├── ecosystem.config.js           # PM2 配置
 └── logs/                         # 日志目录
@@ -134,6 +149,23 @@ zsxq-web/
 │       └── export.js             # 导出功能
 └── vite.config.js                # Vite 配置
 ```
+
+### v0.2 版本 (设计完成)
+
+**新增技术栈**: SQLite 3 (better-sqlite3)
+
+**核心功能**:
+- 支付映射存储: 保存微信支付订单与知识星球用户的映射关系
+- 智能匹配算法: 多维度匹配 (昵称 60% + 时间 20% + 金额 20%)
+- 退款文件生成: 生成符合微信支付批量退款格式的 CSV 文件
+- 人工审核: 低置信度 (< 80%) 匹配结果需人工确认
+
+**三层匹配策略**:
+1. 数据库直接匹配 (置信度 100%)
+2. AI 智能匹配 (置信度 50-99%)
+3. 人工审核 (置信度 < 80%)
+
+详见: `docs/v0.2/README.md`
 
 ### v1 版本 (规划)
 
@@ -236,6 +268,22 @@ CACHE_TTL=86400               # 缓存过期时间(秒)
 3. 刷新页面,找到任意 API 请求
 4. 复制 Request Headers 中的 `x-timestamp`, `authorization`, `x-signature`
 
+### v0.2 新增配置
+
+```env
+# SQLite 数据库路径
+DB_PATH=./data/payment-mapping.db
+
+# 智能匹配阈值
+MATCH_CONFIDENCE_THRESHOLD=50
+
+# 微信支付 API 配置
+WECHAT_PAY_MCHID=1800001791
+WECHAT_PAY_API_KEY=your_api_key
+WECHAT_PAY_CERT_PATH=./certs/apiclient_cert.pem
+WECHAT_PAY_KEY_PATH=./certs/apiclient_key.pem
+```
+
 ### v1 配置 (application.yml)
 
 ```yaml
@@ -279,6 +327,12 @@ zsxq:
 3. `POST /api/camps/:checkinId/refund-list` - 生成退款名单
 4. `GET /api/users/:userId/info` - 用户信息 (带缓存)
 
+### v0.2 新增 API
+
+1. `POST /api/payment/mapping` - 保存支付映射
+2. `POST /api/camps/:checkinId/refund-file` - 生成退款文件
+3. `POST /api/refund/review` - 人工审核确认
+
 ### v1 API (规划)
 
 **Base URL**: `http://localhost:8080/api`
@@ -289,6 +343,37 @@ zsxq:
 - Webhook: `/api/webhook/{source}/{event}`
 
 **认证**: JWT Token (`Authorization: Bearer {token}`)
+
+## 测试规范
+
+### 后端测试 (Jest)
+
+**覆盖率要求**:
+- 分支覆盖率: 50%
+- 其他指标: 80%
+
+**命名规范**:
+- 单元测试: `*.unit.test.js`
+- 集成测试: `*.integration.test.js`
+
+**运行命令**:
+```bash
+npm test                 # 运行所有测试
+npm run test:unit        # 仅单元测试
+npm run test:integration # 仅集成测试
+npm run test:watch       # 监听模式
+```
+
+### 前端测试 (Vitest + Happy DOM)
+
+**测试位置**: `src/__tests__/` 或组件同目录 `Component.test.js`
+
+**运行命令**:
+```bash
+npm run test             # 运行测试
+npm run test:ui          # UI 交互模式
+npm run test:coverage    # 覆盖率报告
+```
 
 ## 部署
 
@@ -388,6 +473,13 @@ git commit -m "feat(api): 实现知识星球 API 服务
 - 添加错误处理"
 ```
 
+## 代码风格
+
+- Prettier: 2 空格缩进, 单引号, 分号, LF 换行
+- 后端模块命名: `*.service.js`, `*.controller.js`, `*.middleware.js`
+- Vue 组件: PascalCase, 使用 `<script setup>`
+- 导入顺序: Vue 核心 → 第三方库 → 本地模块
+
 ## 重要文档
 
 | 文档 | 路径 | 用途 |
@@ -395,10 +487,12 @@ git commit -m "feat(api): 实现知识星球 API 服务
 | **产品需求** | `docs/PRD.md` | 完整功能需求 |
 | **v0 开发计划** | `docs/v0/6AI敏捷开发计划-v0版本.md` | v0 任务清单 |
 | **v0.1 方案** | `docs/v0.1/技术方案.md` | 企微退款设计 |
+| **v0.2 方案** | `docs/v0.2/README.md` | 退款文件生成功能 |
+| **v0.2 技术设计** | `docs/v0.2/混合方案技术设计.md` | v0.2 详细技术方案 |
 | **v1 架构** | `docs/v1/技术架构设计.md` | v1 技术选型 |
 | **v1 数据库** | `docs/v1/数据库设计.md` | 表结构设计 |
 | **进度快照** | `docs/progress/checkpoints/` | 开发检查点 |
-| **会话快照** | `docs/sessions/session-20251030-232243.md` | 上下文迁移 |
+| **自动化指令** | `.claude/commands/README.md` | Claude Code 指令说明 |
 
 ## 开发环境
 
@@ -417,3 +511,4 @@ git commit -m "feat(api): 实现知识星球 API 服务
 4. **版本隔离**: v0 和 v1 独立开发,不要混用依赖
 5. **端口占用**: v0 后端 3013,前端 5173; v1 后端 8080
 6. **Redis 可选**: v0 版本 Redis 是可选依赖,不配置不影响核心功能
+7. **提交前检查**: 运行 `npm run lint` 和 `npm run format` 确保代码风格一致

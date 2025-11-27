@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>知识星球训练营 - H5会员端原型</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #1989fa;
+            --success-color: #07c160;
+            --warning-color: #ff976a;
+            --danger-color: #ee0a24;
+            --text-primary: #323233;
+            --text-secondary: #646566;
+            --text-placeholder: #969799;
+            --bg-color: #f7f8fa;
+            --white: #ffffff;
+            --border-color: #ebedf0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', Arial, sans-serif;
+            background: var(--bg-color);
+            color: var(--text-primary);
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        /* Mobile Frame */
+        .mobile-frame {
+            max-width: 375px;
+            margin: 20px auto;
+            background: var(--white);
+            border-radius: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .mobile-notch {
+            width: 150px;
+            height: 30px;
+            background: #000;
+            border-radius: 0 0 20px 20px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 100;
+        }
+
+        .mobile-screen {
+            height: 720px;
+            overflow-y: auto;
+            position: relative;
+            background: var(--bg-color);
+        }
+
+        /* Navigation Bar */
+        .nav-bar {
+            height: 44px;
+            background: var(--white);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .nav-bar-title {
+            font-size: 17px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .nav-bar-back {
+            position: absolute;
+            left: 16px;
+            font-size: 20px;
+            color: var(--text-primary);
+            cursor: pointer;
+        }
+
+        /* Page Container */
+        .page-container {
+            display: none;
+            min-height: 100%;
+        }
+
+        .page-container.active {
+            display: block;
+        }
+
+        /* Tab Bar */
+        .tab-bar {
+            display: flex;
+            background: var(--white);
+            padding: 8px 16px;
+            gap: 8px;
+            position: sticky;
+            top: 44px;
+            z-index: 40;
+        }
+
+        .tab-item {
+            flex: 1;
+            padding: 8px 16px;
+            text-align: center;
+            font-size: 14px;
+            color: var(--text-secondary);
+            background: var(--bg-color);
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .tab-item.active {
+            background: var(--primary-color);
+            color: var(--white);
+        }
+
+        /* Camp Card */
+        .camp-list {
+            padding: 12px;
+        }
+
+        .camp-card {
+            background: var(--white);
+            border-radius: 12px;
+            margin-bottom: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        }
+
+        .camp-poster {
+            width: 100%;
+            height: 160px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--white);
+            font-size: 24px;
+            position: relative;
+        }
+
+        .camp-poster.blue {
+            background: linear-gradient(135deg, #1989fa 0%, #0066cc 100%);
+        }
+
+        .camp-poster.green {
+            background: linear-gradient(135deg, #07c160 0%, #05a54c 100%);
+        }
+
+        .camp-poster.orange {
+            background: linear-gradient(135deg, #ff976a 0%, #ff6034 100%);
+        }
+
+        .camp-status {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .camp-status.ongoing {
+            background: rgba(7, 193, 96, 0.9);
+            color: var(--white);
+        }
+
+        .camp-status.upcoming {
+            background: rgba(25, 137, 250, 0.9);
+            color: var(--white);
+        }
+
+        .camp-info {
+            padding: 16px;
+        }
+
+        .camp-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .camp-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .camp-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .camp-meta-item .icon {
+            font-size: 14px;
+        }
+
+        .camp-price {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--danger-color);
+        }
+
+        .camp-price small {
+            font-size: 12px;
+            font-weight: 400;
+            color: var(--text-secondary);
+        }
+
+        .camp-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-top: 12px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .camp-enroll-count {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 24px;
+            border-radius: 22px;
+            font-size: 14px;
+            font-weight: 500;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: var(--white);
+        }
+
+        .btn-primary:active {
+            background: #1579dc;
+        }
+
+        .btn-success {
+            background: var(--success-color);
+            color: var(--white);
+        }
+
+        .btn-block {
+            width: 100%;
+        }
+
+        .btn-large {
+            padding: 14px 0;
+            font-size: 16px;
+            border-radius: 8px;
+        }
+
+        .btn-disabled {
+            background: #c8c9cc;
+            color: var(--white);
+            pointer-events: none;
+        }
+
+        /* Form Styles */
+        .form-section {
+            background: var(--white);
+            margin: 12px;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .form-section-title {
+            padding: 16px 16px 8px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .form-item {
+            display: flex;
+            align-items: center;
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .form-item:last-child {
+            border-bottom: none;
+        }
+
+        .form-label {
+            width: 80px;
+            font-size: 14px;
+            color: var(--text-primary);
+            flex-shrink: 0;
+        }
+
+        .form-label.required::after {
+            content: '*';
+            color: var(--danger-color);
+            margin-left: 2px;
+        }
+
+        .form-input {
+            flex: 1;
+            border: none;
+            font-size: 14px;
+            color: var(--text-primary);
+            background: transparent;
+            text-align: right;
+        }
+
+        .form-input::placeholder {
+            color: var(--text-placeholder);
+        }
+
+        .form-input:focus {
+            outline: none;
+        }
+
+        .form-tip {
+            padding: 12px 16px;
+            font-size: 12px;
+            color: var(--primary-color);
+            background: rgba(25, 137, 250, 0.08);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Info Card */
+        .info-card {
+            background: var(--white);
+            margin: 12px;
+            border-radius: 12px;
+            padding: 16px;
+        }
+
+        .info-card-header {
+            display: flex;
+            gap: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 12px;
+        }
+
+        .info-card-poster {
+            width: 80px;
+            height: 80px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #1989fa 0%, #0066cc 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--white);
+            font-size: 32px;
+        }
+
+        .info-card-content {
+            flex: 1;
+        }
+
+        .info-card-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .info-card-meta {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        /* Bottom Bar */
+        .bottom-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            max-width: 375px;
+            margin: 0 auto;
+            background: var(--white);
+            padding: 12px 16px;
+            padding-bottom: calc(12px + env(safe-area-inset-bottom));
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            z-index: 100;
+        }
+
+        .bottom-bar-price {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--danger-color);
+        }
+
+        .bottom-bar-price small {
+            font-size: 14px;
+            font-weight: 400;
+        }
+
+        .bottom-bar .btn {
+            flex: 1;
+        }
+
+        /* Success Page */
+        .success-content {
+            text-align: center;
+            padding: 40px 24px;
+        }
+
+        .success-icon {
+            width: 80px;
+            height: 80px;
+            background: var(--success-color);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 40px;
+            color: var(--white);
+        }
+
+        .success-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .success-desc {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+        }
+
+        .qrcode-container {
+            background: var(--white);
+            padding: 24px;
+            border-radius: 12px;
+            margin: 0 auto 24px;
+            max-width: 280px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .qrcode-image {
+            width: 200px;
+            height: 200px;
+            background: linear-gradient(45deg, #ddd 25%, transparent 25%),
+                        linear-gradient(-45deg, #ddd 25%, transparent 25%),
+                        linear-gradient(45deg, transparent 75%, #ddd 75%),
+                        linear-gradient(-45deg, transparent 75%, #ddd 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            color: var(--text-secondary);
+            border-radius: 8px;
+        }
+
+        .qrcode-tip {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-top: 12px;
+        }
+
+        /* Progress Page */
+        .progress-header {
+            background: linear-gradient(135deg, #1989fa 0%, #0066cc 100%);
+            padding: 20px 16px;
+            color: var(--white);
+        }
+
+        .progress-camp-name {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .progress-time {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+
+        .progress-bar-container {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            height: 8px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: var(--white);
+            border-radius: 10px;
+            transition: width 0.3s;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            padding: 16px;
+            margin-top: -20px;
+        }
+
+        .stat-item {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 16px 12px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        .stat-value.success {
+            color: var(--success-color);
+        }
+
+        .stat-value.warning {
+            color: var(--warning-color);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        /* Checkin Calendar */
+        .calendar-section {
+            background: var(--white);
+            margin: 12px;
+            border-radius: 12px;
+            padding: 16px;
+        }
+
+        .calendar-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 16px;
+        }
+
+        .calendar-header {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+            margin-bottom: 8px;
+        }
+
+        .calendar-header span {
+            text-align: center;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+        }
+
+        .calendar-day {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            border-radius: 8px;
+            background: var(--bg-color);
+            color: var(--text-secondary);
+        }
+
+        .calendar-day.checked {
+            background: var(--success-color);
+            color: var(--white);
+        }
+
+        .calendar-day.missed {
+            background: rgba(238, 10, 36, 0.1);
+            color: var(--danger-color);
+        }
+
+        .calendar-day.future {
+            background: transparent;
+            border: 1px dashed var(--border-color);
+            color: var(--text-placeholder);
+        }
+
+        .calendar-legend {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 16px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .calendar-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .calendar-legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 4px;
+        }
+
+        .calendar-legend-dot.checked {
+            background: var(--success-color);
+        }
+
+        .calendar-legend-dot.missed {
+            background: rgba(238, 10, 36, 0.3);
+        }
+
+        .calendar-legend-dot.future {
+            border: 1px dashed var(--border-color);
+        }
+
+        /* Refund Status */
+        .refund-status-card {
+            background: var(--white);
+            margin: 12px;
+            border-radius: 12px;
+            padding: 16px;
+        }
+
+        .refund-status-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .refund-status-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .refund-badge {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .refund-badge.pending {
+            background: rgba(255, 151, 106, 0.15);
+            color: var(--warning-color);
+        }
+
+        .refund-badge.success {
+            background: rgba(7, 193, 96, 0.15);
+            color: var(--success-color);
+        }
+
+        .refund-badge.processing {
+            background: rgba(25, 137, 250, 0.15);
+            color: var(--primary-color);
+        }
+
+        .refund-info {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .refund-info-item {
+            text-align: center;
+        }
+
+        .refund-info-value {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .refund-info-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        /* Rules Card */
+        .rules-card {
+            background: var(--white);
+            margin: 12px;
+            border-radius: 12px;
+            padding: 16px;
+        }
+
+        .rules-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+        }
+
+        .rules-list {
+            list-style: none;
+        }
+
+        .rules-list li {
+            font-size: 13px;
+            color: var(--text-secondary);
+            padding: 6px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .rules-list li::before {
+            content: '●';
+            position: absolute;
+            left: 0;
+            color: var(--primary-color);
+            font-size: 8px;
+        }
+
+        /* Page Navigation Demo */
+        .page-demo-nav {
+            position: fixed;
+            top: 50%;
+            right: 20px;
+            transform: translateY(-50%);
+            background: #333;
+            padding: 16px;
+            border-radius: 12px;
+            z-index: 1000;
+        }
+
+        .page-demo-nav h4 {
+            color: #fff;
+            font-size: 12px;
+            margin-bottom: 12px;
+        }
+
+        .page-demo-nav button {
+            display: block;
+            width: 100%;
+            padding: 8px 16px;
+            margin-bottom: 8px;
+            background: #555;
+            border: none;
+            border-radius: 6px;
+            color: #fff;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .page-demo-nav button:hover {
+            background: #1989fa;
+        }
+
+        .page-demo-nav button.active {
+            background: #1989fa;
+        }
+
+        /* Spacer for bottom bar */
+        .bottom-spacer {
+            height: 80px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Page Navigation Demo -->
+    <div class="page-demo-nav">
+        <h4>H5页面切换</h4>
+        <button onclick="showH5Page('list')" class="active">训练营列表</button>
+        <button onclick="showH5Page('enroll')">报名支付</button>
+        <button onclick="showH5Page('qrcode')">群二维码</button>
+        <button onclick="showH5Page('progress')">打卡进度</button>
+    </div>
+
+    <!-- Mobile Frame -->
+    <div class="mobile-frame">
+        <div class="mobile-notch"></div>
+        <div class="mobile-screen">
+            <!-- Page 1: Camp List -->
+            <div class="page-container active" id="listPage">
+                <div class="nav-bar">
+                    <span class="nav-bar-title">知识星球训练营</span>
+                </div>
+
+                <div class="tab-bar">
+                    <div class="tab-item active">进行中</div>
+                    <div class="tab-item">即将开始</div>
+                </div>
+
+                <div class="camp-list">
+                    <div class="camp-card" onclick="showH5Page('enroll')">
+                        <div class="camp-poster blue">
+                            <span>早起</span>
+                            <div class="camp-status ongoing">进行中</div>
+                        </div>
+                        <div class="camp-info">
+                            <div class="camp-name">21天早起训练营</div>
+                            <div class="camp-meta">
+                                <div class="camp-meta-item">
+                                    <span class="icon">📅</span>
+                                    <span>01-01 ~ 01-21</span>
+                                </div>
+                                <div class="camp-meta-item">
+                                    <span class="icon">✅</span>
+                                    <span>21天15打卡</span>
+                                </div>
+                            </div>
+                            <div class="camp-footer">
+                                <div class="camp-price">
+                                    ¥99
+                                    <small>押金</small>
+                                </div>
+                                <div class="camp-enroll-count">已报名 156人</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="camp-card">
+                        <div class="camp-poster green">
+                            <span>读书</span>
+                            <div class="camp-status upcoming">即将开始</div>
+                        </div>
+                        <div class="camp-info">
+                            <div class="camp-name">7天读书打卡营</div>
+                            <div class="camp-meta">
+                                <div class="camp-meta-item">
+                                    <span class="icon">📅</span>
+                                    <span>01-15 ~ 01-22</span>
+                                </div>
+                                <div class="camp-meta-item">
+                                    <span class="icon">✅</span>
+                                    <span>7天5打卡</span>
+                                </div>
+                            </div>
+                            <div class="camp-footer">
+                                <div class="camp-price">
+                                    ¥49
+                                    <small>押金</small>
+                                </div>
+                                <div class="camp-enroll-count">已报名 89人</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="camp-card">
+                        <div class="camp-poster orange">
+                            <span>健身</span>
+                            <div class="camp-status ongoing">进行中</div>
+                        </div>
+                        <div class="camp-info">
+                            <div class="camp-name">30天健身打卡营</div>
+                            <div class="camp-meta">
+                                <div class="camp-meta-item">
+                                    <span class="icon">📅</span>
+                                    <span>01-01 ~ 01-30</span>
+                                </div>
+                                <div class="camp-meta-item">
+                                    <span class="icon">✅</span>
+                                    <span>30天20打卡</span>
+                                </div>
+                            </div>
+                            <div class="camp-footer">
+                                <div class="camp-price">
+                                    ¥199
+                                    <small>押金</small>
+                                </div>
+                                <div class="camp-enroll-count">已报名 234人</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Page 2: Enroll Form -->
+            <div class="page-container" id="enrollPage">
+                <div class="nav-bar">
+                    <span class="nav-bar-back" onclick="showH5Page('list')">‹</span>
+                    <span class="nav-bar-title">报名参加</span>
+                </div>
+
+                <div class="info-card">
+                    <div class="info-card-header">
+                        <div class="info-card-poster">早起</div>
+                        <div class="info-card-content">
+                            <div class="info-card-name">21天早起训练营</div>
+                            <div class="info-card-meta">
+                                时间：01-01 ~ 01-21<br>
+                                要求：21天15打卡<br>
+                                押金：¥99
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <div class="form-section-title">请填写报名信息</div>
+                    <div class="form-item">
+                        <label class="form-label required">星球昵称</label>
+                        <input type="text" class="form-input" placeholder="请输入您的星球昵称">
+                    </div>
+                    <div class="form-item">
+                        <label class="form-label required">星球ID</label>
+                        <input type="text" class="form-input" placeholder="请输入您的星球ID">
+                    </div>
+                    <div class="form-tip">
+                        <span>💡</span>
+                        <span>如何获取星球ID？打开知识星球App → 我的 → 右上角设置</span>
+                    </div>
+                    <div class="form-item">
+                        <label class="form-label required">微信昵称</label>
+                        <input type="text" class="form-input" placeholder="请输入您的微信昵称">
+                    </div>
+                </div>
+
+                <div class="rules-card">
+                    <div class="rules-title">退款规则说明</div>
+                    <ul class="rules-list">
+                        <li>完成打卡要求后自动退款</li>
+                        <li>项目结束后3个工作日内到账</li>
+                        <li>原路退回支付账户</li>
+                        <li>中途退出不退款</li>
+                    </ul>
+                </div>
+
+                <div class="bottom-spacer"></div>
+
+                <div class="bottom-bar">
+                    <div class="bottom-bar-price">
+                        <small>押金</small> ¥99
+                    </div>
+                    <button class="btn btn-primary" onclick="showH5Page('qrcode')">
+                        支付押金
+                    </button>
+                </div>
+            </div>
+
+            <!-- Page 3: QR Code -->
+            <div class="page-container" id="qrcodePage">
+                <div class="nav-bar">
+                    <span class="nav-bar-title">报名成功</span>
+                </div>
+
+                <div class="success-content">
+                    <div class="success-icon">✓</div>
+                    <div class="success-title">支付成功！</div>
+                    <div class="success-desc">恭喜您成功报名「21天早起训练营」</div>
+
+                    <div class="qrcode-container">
+                        <div class="qrcode-image">
+                            [群二维码]
+                        </div>
+                        <div class="qrcode-tip">请长按保存二维码，扫码加入训练营学习群</div>
+                    </div>
+
+                    <button class="btn btn-success btn-block btn-large" onclick="showH5Page('progress')">
+                        查看我的打卡进度
+                    </button>
+                </div>
+            </div>
+
+            <!-- Page 4: Progress -->
+            <div class="page-container" id="progressPage">
+                <div class="nav-bar">
+                    <span class="nav-bar-back" onclick="showH5Page('list')">‹</span>
+                    <span class="nav-bar-title">我的打卡进度</span>
+                </div>
+
+                <div class="progress-header">
+                    <div class="progress-camp-name">21天早起训练营</div>
+                    <div class="progress-time">
+                        <span>已进行 15天</span>
+                        <span>共21天</span>
+                    </div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar-fill" style="width: 71%;"></div>
+                    </div>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-value success">16</div>
+                        <div class="stat-label">已打卡天数</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">15</div>
+                        <div class="stat-label">要求天数</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value success">✓</div>
+                        <div class="stat-label">已达标</div>
+                    </div>
+                </div>
+
+                <div class="calendar-section">
+                    <div class="calendar-title">打卡日历</div>
+                    <div class="calendar-header">
+                        <span>一</span>
+                        <span>二</span>
+                        <span>三</span>
+                        <span>四</span>
+                        <span>五</span>
+                        <span>六</span>
+                        <span>日</span>
+                    </div>
+                    <div class="calendar-grid">
+                        <div class="calendar-day checked">1</div>
+                        <div class="calendar-day checked">2</div>
+                        <div class="calendar-day missed">3</div>
+                        <div class="calendar-day checked">4</div>
+                        <div class="calendar-day checked">5</div>
+                        <div class="calendar-day checked">6</div>
+                        <div class="calendar-day checked">7</div>
+                        <div class="calendar-day checked">8</div>
+                        <div class="calendar-day checked">9</div>
+                        <div class="calendar-day missed">10</div>
+                        <div class="calendar-day checked">11</div>
+                        <div class="calendar-day checked">12</div>
+                        <div class="calendar-day checked">13</div>
+                        <div class="calendar-day checked">14</div>
+                        <div class="calendar-day checked">15</div>
+                        <div class="calendar-day future">16</div>
+                        <div class="calendar-day future">17</div>
+                        <div class="calendar-day future">18</div>
+                        <div class="calendar-day future">19</div>
+                        <div class="calendar-day future">20</div>
+                        <div class="calendar-day future">21</div>
+                    </div>
+                    <div class="calendar-legend">
+                        <div class="calendar-legend-item">
+                            <div class="calendar-legend-dot checked"></div>
+                            <span>已打卡</span>
+                        </div>
+                        <div class="calendar-legend-item">
+                            <div class="calendar-legend-dot missed"></div>
+                            <span>未打卡</span>
+                        </div>
+                        <div class="calendar-legend-item">
+                            <div class="calendar-legend-dot future"></div>
+                            <span>未开始</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="refund-status-card">
+                    <div class="refund-status-header">
+                        <div class="refund-status-title">退款状态</div>
+                        <div class="refund-badge processing">待审核</div>
+                    </div>
+                    <div class="refund-info">
+                        <div class="refund-info-item">
+                            <div class="refund-info-value">¥99</div>
+                            <div class="refund-info-label">押金金额</div>
+                        </div>
+                        <div class="refund-info-item">
+                            <div class="refund-info-value">16/15</div>
+                            <div class="refund-info-label">打卡天数</div>
+                        </div>
+                        <div class="refund-info-item">
+                            <div class="refund-info-value" style="color: var(--success-color);">符合</div>
+                            <div class="refund-info-label">退款条件</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bottom-spacer"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showH5Page(page) {
+            // Hide all pages
+            document.querySelectorAll('.page-container').forEach(p => {
+                p.classList.remove('active');
+            });
+
+            // Show target page
+            document.getElementById(page + 'Page').classList.add('active');
+
+            // Update nav buttons
+            document.querySelectorAll('.page-demo-nav button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+        }
+    </script>
+</body>
+</html>

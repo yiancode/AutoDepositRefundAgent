@@ -1,0 +1,52 @@
+{
+  "id": "checkpoint-20251128-025735",
+  "timestamp": "2025-11-28T02:57:35+08:00",
+  "description": "完成管理后台原型所有页面交互功能",
+  "git": {
+    "commit": "b0aa0e7",
+    "branch": "main",
+    "totalCommits": 50,
+    "lastCommitMessage": "feat:原型"
+  },
+  "progress": {
+    "overall": 25,
+    "phase0": 100,
+    "phase0_2": 30,
+    "phase1": 0,
+    "description": "v0核心API完成, v0.2设计完成, 原型开发完成"
+  },
+  "codeStats": {
+    "backend": 2398,
+    "frontend": 1276,
+    "test": 2233,
+    "prototypes": 8529
+  },
+  "completedTasks": [
+    "管理后台原型 - 工作台页面",
+    "管理后台原型 - 训练营管理页面（列表、创建弹窗、详情抽屉）",
+    "管理后台原型 - 会员管理页面（列表、详情抽屉、手动匹配）",
+    "管理后台原型 - 打卡管理页面（记���列表、进度统计、日历视图）",
+    "管理后台原型 - 退款审核页面（待审核、退款记录、详情抽屉、批量操作）",
+    "管理后台原型 - 统计报表页面",
+    "管理后台原型 - 系统管理页面（用户管理、系统配置、操作日志）",
+    "H5会员端原型 - 训练营列表",
+    "H5会员端原型 - 报名支付",
+    "H5会员端原型 - 群二维码展示",
+    "H5会员端原型 - 打卡进度查询",
+    "修复: drawer-overlay CSS 样式缺失导致页面底部显示错乱内容"
+  ],
+  "inProgressTasks": [],
+  "pendingTasks": [
+    "前端 Vue 3 项目搭建",
+    "后端 Java Spring Boot 项目搭建",
+    "数据库设计实现",
+    "API 接口开发",
+    "企业微信支付集成",
+    "知识星球 API 集成"
+  ],
+  "notes": [
+    "admin-prototype.html: 7400+ 行，包含完整的管理后台交互原型",
+    "h5-member-prototype.html: 1125 行，包含 H5 会员端原型",
+    "本次修复了 drawer-overlay 样式缺失问题，该问题导致退款详情抽屉内容显示在页面底部"
+  ]
+}

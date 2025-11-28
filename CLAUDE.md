@@ -17,9 +17,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ```bash
 cd zsxq-api
 npm run dev              # 开发 http://localhost:3013
-npm test                 # 全部测试
+npm test                 # 全部测试（含覆盖率）
 npm run test:unit        # 单元测试
 npm run test:integration # 集成测试
+npm test -- --testPathPattern="refund"  # 运行单个测试文件
 npm run lint && npm run format  # 代码检查
 npm run pm2:start        # 生产启动
 ```
@@ -30,7 +31,8 @@ npm run pm2:start        # 生产启动
 cd zsxq-web
 npm run dev              # 开发 http://localhost:5173
 npm run build            # 生产构建
-npm run test             # 测试
+npm run test             # 测试 (vitest)
+npm run test:ui          # 带 UI 的测试
 ```
 
 ### 健康检查
@@ -38,6 +40,12 @@ npm run test             # 测试
 ```bash
 curl http://localhost:3013/health
 open http://localhost:3013/api-docs  # Swagger 文档
+```
+
+### 开发环境初始化
+
+```bash
+bash docs/config/env/setup-dev-env.sh  # 安装依赖 + 运行测试 + 格式化
 ```
 
 ## 架构设计

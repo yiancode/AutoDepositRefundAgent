@@ -1,0 +1,46 @@
+{
+  "id": "BUG-002",
+  "title": "xychart-beta 不支持中文字符",
+  "category": "Mermaid",
+  "subcategory": "图表渲染",
+  "keywords": ["xychart-beta", "Mermaid", "中文", "图表", "情绪曲线"],
+  "severity": "medium",
+  "status": "resolved",
+  "discoveredAt": "2025-11-30",
+  "resolvedAt": "2025-11-30",
+  "symptom": {
+    "errorMessage": "ERROR: [Mermaid] Lexical error on line 3. Unrecognized text.",
+    "context": "使用 xychart-beta 语法绘制情绪曲线图时，x-axis 中文标签导致解析失败"
+  },
+  "rootCause": "Mermaid 11.9.0 的 xychart-beta 是实验性功能，词法分析器不支持中文字符",
+  "solution": {
+    "approach": "使用 Markdown 表格 + ASCII 艺术替代 xychart-beta",
+    "benefits": [
+      "100% 兼容性",
+      "语义清晰",
+      "无需依赖实验性功能"
+    ]
+  },
+  "alternatives": [
+    {
+      "name": "Markdown 表格",
+      "pros": "兼容性100%，语义清晰",
+      "cons": "无法展示曲线趋势"
+    },
+    {
+      "name": "表格 + ASCII",
+      "pros": "兼容性好，可展示趋势",
+      "cons": "需要手工绘制"
+    },
+    {
+      "name": "外部图片",
+      "pros": "完美展示",
+      "cons": "需要额外维护图片"
+    }
+  ],
+  "affectedFiles": [
+    "docs/v1.1/diagrams/用户旅程图.md"
+  ],
+  "relatedBugs": ["BUG-001"],
+  "tags": ["mermaid", "xychart", "i18n", "chinese", "beta-feature"]
+}

@@ -1,0 +1,25 @@
+{
+  "id": "BUG-001",
+  "title": "C4Deployment 语法在 Mermaid 11.9.0 中支持有限",
+  "category": "Mermaid",
+  "subcategory": "图表渲染",
+  "keywords": ["C4Deployment", "Mermaid", "语法错误", "部署图", "C4模型"],
+  "severity": "medium",
+  "status": "resolved",
+  "discoveredAt": "2025-11-30",
+  "resolvedAt": "2025-11-30",
+  "symptom": {
+    "errorMessage": "ERROR: [Mermaid] undefined is not an object (evaluating 'r.x')",
+    "context": "使用 C4Deployment 语法绘制部署架构图时渲染失败"
+  },
+  "rootCause": "Mermaid 11.9.0 版本对 C4Deployment 语法解析存在 Bug，嵌套的 Deployment_Node 处理异常",
+  "solution": {
+    "approach": "使用标准 flowchart 语法配合 subgraph 替代 C4Deployment",
+    "codeExample": "flowchart TB\n    subgraph CDN[\"CDN (阿里云CDN)\"]\n        h5Static[\"H5 静态资源\"]\n    end"
+  },
+  "affectedFiles": [
+    "docs/v1.1/diagrams/架构设计图.md"
+  ],
+  "relatedBugs": ["BUG-002"],
+  "tags": ["mermaid", "c4-model", "diagram", "rendering"]
+}

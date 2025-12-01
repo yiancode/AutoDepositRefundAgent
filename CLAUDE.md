@@ -120,18 +120,27 @@ CACHE_ENABLED=true
 
 ## 自动化指令
 
-项目配置了 Claude Code 指令系统 (`.claude/commands/`)：
+项目配置了完整的 Claude Code 指令系统，详见 `.claude/commands/README.md`。
+
+**常用指令**:
 
 | 指令 | 用途 |
 |------|------|
 | `/task-plan` | 规划新任务，拆分为可执行步骤 |
 | `/progress-save` | 保存开发进度检查点（含恢复指令） |
 | `/progress-load` | 加载历史进度 |
+| `/progress-compare` | 对比两个时间点的进度变化 |
 | `/bug-add` | 记录 Bug 到经验库 |
 | `/bug-search` | 搜索已知 Bug 解决方案 |
+| `/bug-list` | 按分类列出 Bug 清单 |
+| `/bug-stats` | Bug 统计分析报告 |
 | `/test-backend` | 运行后端测试 |
 | `/test-frontend` | 运行前端测试 |
-| `/deploy-*` | 部署到各环境 |
+| `/review-file` | 审查指定文件的代码质量 |
+| `/docs-api` | 生成 API 文档 |
+| `/deploy-dev` | 部署到开发环境 |
+| `/deploy-test` | 部署到测试环境 |
+| `/deploy-prod` | 部署到生产环境 |
 
 ## 关键文档
 
@@ -166,9 +175,12 @@ CACHE_ENABLED=true
 | 新增 API 接口 | `routes/camps.js` |
 | 新增业务逻辑 | `services/refund.service.js` |
 | 新增工具函数 | `utils/sanitize.js` |
+| 路由参数校验 | `middlewares/validation.middleware.js` |
+| Redis 缓存 | `utils/redis.js` |
 | 新增单元测试 | `__tests__/unit/refund.service.unit.test.js` |
 | 新增集成测试 | `__tests__/integration/camps.api.integration.test.js` |
 | 新增 Vue 页面 | `zsxq-web/src/views/RefundList.vue` |
+| 前端 API 调用 | `zsxq-web/src/api/camps.js` |
 
 ## 上下文管理
 

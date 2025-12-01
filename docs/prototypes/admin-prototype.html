@@ -598,6 +598,89 @@
             color: var(--accent-red);
         }
 
+        /* 新增训练营状态 - 根据技术方案 v1 */
+        .status-badge.draft {
+            background: rgba(139, 148, 158, 0.15);
+            color: var(--text-muted);
+        }
+
+        .status-badge.enrolling {
+            background: rgba(88, 166, 255, 0.15);
+            color: var(--accent-blue);
+        }
+
+        .status-badge.settling {
+            background: rgba(163, 113, 247, 0.15);
+            color: var(--accent-purple);
+        }
+
+        .status-badge.archived {
+            background: rgba(110, 118, 129, 0.15);
+            color: var(--text-muted);
+        }
+
+        .status-badge.cancelled {
+            background: rgba(248, 81, 73, 0.15);
+            color: var(--accent-red);
+        }
+
+        /* 支付映射绑定状态 - 根据技术方案 v1 */
+        .status-badge.bind-pending {
+            background: rgba(210, 153, 34, 0.15);
+            color: var(--accent-orange);
+        }
+
+        .status-badge.bind-completed {
+            background: rgba(63, 185, 80, 0.15);
+            color: var(--accent-green);
+        }
+
+        .status-badge.bind-expired {
+            background: rgba(248, 81, 73, 0.15);
+            color: var(--accent-red);
+        }
+
+        .status-badge.bind-manual {
+            background: rgba(163, 113, 247, 0.15);
+            color: var(--accent-purple);
+        }
+
+        .status-badge.bind-closed {
+            background: rgba(110, 118, 129, 0.15);
+            color: var(--text-muted);
+        }
+
+        /* 绑定方式标签 */
+        .method-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .method-badge.dynamic-qrcode {
+            background: rgba(63, 185, 80, 0.15);
+            color: var(--accent-green);
+        }
+
+        .method-badge.user-fill {
+            background: rgba(88, 166, 255, 0.15);
+            color: var(--accent-blue);
+        }
+
+        .method-badge.smart-match {
+            background: rgba(163, 113, 247, 0.15);
+            color: var(--accent-purple);
+        }
+
+        .method-badge.manual {
+            background: rgba(210, 153, 34, 0.15);
+            color: var(--accent-orange);
+        }
+
         /* Progress Bar */
         .progress-bar {
             width: 100%;
@@ -2205,6 +2288,11 @@
                         <span class="menu-item-icon">📝</span>
                         <span>打卡管理</span>
                     </div>
+                    <div class="menu-item" data-page="payments">
+                        <span class="menu-item-icon">💳</span>
+                        <span>支付映射</span>
+                        <span class="menu-item-badge">5</span>
+                    </div>
                     <div class="menu-item" data-page="refunds">
                         <span class="menu-item-icon">💰</span>
                         <span>退款审核</span>
@@ -2398,11 +2486,16 @@
                             <div class="filters-bar">
                                 <div class="filter-group">
                                     <span class="filter-label">状态：</span>
-                                    <select class="filter-select">
-                                        <option>全部</option>
-                                        <option>进行中</option>
-                                        <option>即将开始</option>
-                                        <option>已结束</option>
+                                    <select class="filter-select" id="campStatusFilter">
+                                        <option value="">全部</option>
+                                        <option value="draft">草稿</option>
+                                        <option value="pending">待发布</option>
+                                        <option value="enrolling">报名中</option>
+                                        <option value="ongoing">进行中</option>
+                                        <option value="ended">已结束</option>
+                                        <option value="settling">结算中</option>
+                                        <option value="archived">已归档</option>
+                                        <option value="cancelled">已取消</option>
                                     </select>
                                 </div>
                                 <div class="filter-group">
@@ -2458,7 +2551,7 @@
                                         <td>2025-01-15 ~ 2025-01-22</td>
                                         <td>7天5打卡</td>
                                         <td>89 / 100</td>
-                                        <td><span class="status-badge upcoming">● 即将开始</span></td>
+                                        <td><span class="status-badge enrolling">● 报名中</span></td>
                                         <td>
                                             <div class="action-btns">
                                                 <button class="action-btn view" onclick="viewCampDetail(12346)">查看</button>
@@ -2475,10 +2568,44 @@
                                         <td>2024-12-01 ~ 2024-12-30</td>
                                         <td>30天20打卡</td>
                                         <td>234 / 300</td>
-                                        <td><span class="status-badge ended">● 已结束</span></td>
+                                        <td><span class="status-badge settling">● 结算中</span></td>
                                         <td>
                                             <div class="action-btns">
                                                 <button class="action-btn view" onclick="viewCampDetail(12344)">查看</button>
+                                                <button class="action-btn approve" onclick="settleCamp(12344)">退款审核</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <strong>14天冥想训练营</strong>
+                                            <br><small style="color: var(--text-muted);">ID: 12347</small>
+                                        </td>
+                                        <td>¥79</td>
+                                        <td>2025-02-01 ~ 2025-02-14</td>
+                                        <td>14天10打卡</td>
+                                        <td>0 / 150</td>
+                                        <td><span class="status-badge draft">● 草稿</span></td>
+                                        <td>
+                                            <div class="action-btns">
+                                                <button class="action-btn view" onclick="editCamp(12347)">编辑</button>
+                                                <button class="action-btn approve" onclick="publishCamp(12347)">发布</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <strong>60天英语学习营</strong>
+                                            <br><small style="color: var(--text-muted);">ID: 12343</small>
+                                        </td>
+                                        <td>¥299</td>
+                                        <td>2024-10-01 ~ 2024-11-30</td>
+                                        <td>60天45打卡</td>
+                                        <td>189 / 200</td>
+                                        <td><span class="status-badge archived">● 已归档</span></td>
+                                        <td>
+                                            <div class="action-btns">
+                                                <button class="action-btn view" onclick="viewCampDetail(12343)">查看</button>
                                             </div>
                                         </td>
                                     </tr>
@@ -2522,12 +2649,23 @@
                                     </select>
                                 </div>
                                 <div class="filter-group">
-                                    <span class="filter-label">匹配状态：</span>
-                                    <select class="filter-select" id="memberStatusFilter" onchange="filterMembers()">
+                                    <span class="filter-label">绑定状态：</span>
+                                    <select class="filter-select" id="memberBindStatusFilter" onchange="filterMembers()">
                                         <option value="">全部</option>
-                                        <option value="matched">已匹配</option>
-                                        <option value="pending">待匹配</option>
-                                        <option value="failed">匹配失败</option>
+                                        <option value="completed">已绑定</option>
+                                        <option value="pending">待绑定</option>
+                                        <option value="expired">已过期</option>
+                                        <option value="manual_required">需人工</option>
+                                    </select>
+                                </div>
+                                <div class="filter-group">
+                                    <span class="filter-label">绑定方式：</span>
+                                    <select class="filter-select" id="memberBindMethodFilter" onchange="filterMembers()">
+                                        <option value="">全部</option>
+                                        <option value="dynamic_qrcode">动态二维码</option>
+                                        <option value="user_fill">用户填写</option>
+                                        <option value="smart_match">智能匹配</option>
+                                        <option value="manual">人工绑定</option>
                                     </select>
                                 </div>
                                 <div class="filter-group">
@@ -2544,7 +2682,8 @@
                                         <th>星球ID</th>
                                         <th>微信昵称</th>
                                         <th>训练营</th>
-                                        <th>匹配状态</th>
+                                        <th>绑定状态</th>
+                                        <th>绑定方式</th>
                                         <th>匹配置信度</th>
                                         <th>操作</th>
                                     </tr>
@@ -2555,7 +2694,8 @@
                                         <td>88455815</td>
                                         <td>小球球</td>
                                         <td>21天早起训练营</td>
-                                        <td><span class="status-badge success">● 已匹配</span></td>
+                                        <td><span class="status-badge bind-completed">● 已绑定</span></td>
+                                        <td><span class="method-badge dynamic-qrcode">📱 动态二维码</span></td>
                                         <td>
                                             <div class="confidence high">
                                                 <span class="confidence-dot"></span>
@@ -2573,17 +2713,17 @@
                                         <td>88123457</td>
                                         <td>小明同学</td>
                                         <td>21天早起训练营</td>
-                                        <td><span class="status-badge pending">● 待匹配</span></td>
+                                        <td><span class="status-badge bind-completed">● 已绑定</span></td>
+                                        <td><span class="method-badge user-fill">✍️ 用户填写</span></td>
                                         <td>
-                                            <div class="confidence medium">
+                                            <div class="confidence high">
                                                 <span class="confidence-dot"></span>
-                                                <span>66%</span>
+                                                <span>95%</span>
                                             </div>
                                         </td>
                                         <td>
                                             <div class="action-btns">
                                                 <button class="action-btn view" onclick="event.stopPropagation(); viewMemberDetail('M002')">详情</button>
-                                                <button class="action-btn approve" onclick="event.stopPropagation(); openManualMatchModal('M002')">手动匹配</button>
                                             </div>
                                         </td>
                                     </tr>
@@ -2592,17 +2732,18 @@
                                         <td>88123456</td>
                                         <td>小红</td>
                                         <td>21天早起训练营</td>
-                                        <td><span class="status-badge pending">● 待匹配</span></td>
+                                        <td><span class="status-badge bind-completed">● 已绑定</span></td>
+                                        <td><span class="method-badge smart-match">🤖 智能匹配</span></td>
                                         <td>
-                                            <div class="confidence low">
+                                            <div class="confidence medium">
                                                 <span class="confidence-dot"></span>
-                                                <span>33%</span>
+                                                <span>75%</span>
                                             </div>
                                         </td>
                                         <td>
                                             <div class="action-btns">
                                                 <button class="action-btn view" onclick="event.stopPropagation(); viewMemberDetail('M003')">详情</button>
-                                                <button class="action-btn approve" onclick="event.stopPropagation(); openManualMatchModal('M003')">手动匹配</button>
+                                                <button class="action-btn approve" onclick="event.stopPropagation(); openManualMatchModal('M003')">确认匹配</button>
                                             </div>
                                         </td>
                                     </tr>
@@ -2611,17 +2752,57 @@
                                         <td>-</td>
                                         <td>微信用户A</td>
                                         <td>21天早起训练营</td>
-                                        <td><span class="status-badge failed">● 匹配失败</span></td>
+                                        <td><span class="status-badge bind-pending">● 待绑定</span></td>
+                                        <td><span style="color: var(--text-muted);">-</span></td>
                                         <td>
                                             <div class="confidence low">
                                                 <span class="confidence-dot"></span>
-                                                <span>0%</span>
+                                                <span>-</span>
                                             </div>
                                         </td>
                                         <td>
                                             <div class="action-btns">
                                                 <button class="action-btn view" onclick="event.stopPropagation(); viewMemberDetail('M004')">详情</button>
-                                                <button class="action-btn approve" onclick="event.stopPropagation(); openManualMatchModal('M004')">手动匹配</button>
+                                                <button class="action-btn approve" onclick="event.stopPropagation(); openManualMatchModal('M004')">手动绑定</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr onclick="viewMemberDetail('M005')" data-match-status="expired">
+                                        <td>微信用户B</td>
+                                        <td>-</td>
+                                        <td>微信用户B</td>
+                                        <td>21天早起训练营</td>
+                                        <td><span class="status-badge bind-expired">● 已过期</span></td>
+                                        <td><span style="color: var(--text-muted);">-</span></td>
+                                        <td>
+                                            <div class="confidence low">
+                                                <span class="confidence-dot"></span>
+                                                <span>-</span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="action-btns">
+                                                <button class="action-btn view" onclick="event.stopPropagation(); viewMemberDetail('M005')">详情</button>
+                                                <button class="action-btn approve" onclick="event.stopPropagation(); openManualMatchModal('M005')">人工处理</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr onclick="viewMemberDetail('M006')" data-match-status="manual">
+                                        <td>运营助手小王</td>
+                                        <td>88999888</td>
+                                        <td>小王</td>
+                                        <td>21天早起训练营</td>
+                                        <td><span class="status-badge bind-completed">● 已绑定</span></td>
+                                        <td><span class="method-badge manual">👤 人工绑定</span></td>
+                                        <td>
+                                            <div class="confidence high">
+                                                <span class="confidence-dot"></span>
+                                                <span>100%</span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="action-btns">
+                                                <button class="action-btn view" onclick="event.stopPropagation(); viewMemberDetail('M006')">详情</button>
                                             </div>
                                         </td>
                                     </tr>
@@ -3102,6 +3283,280 @@
                     </div>
                 </div>
 
+                <!-- Payment Mapping Page 支付映射管理 -->
+                <div class="page" id="paymentsPage">
+                    <h1 class="page-title">支付映射管理</h1>
+
+                    <!-- 统计卡片 -->
+                    <div class="stats-grid" style="grid-template-columns: repeat(5, 1fr);">
+                        <div class="stat-card">
+                            <div class="stat-value" style="color: var(--accent-orange);">5</div>
+                            <div class="stat-label">待绑定</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" style="color: var(--accent-green);">156</div>
+                            <div class="stat-label">已绑定</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" style="color: var(--accent-red);">3</div>
+                            <div class="stat-label">已过期</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" style="color: var(--accent-purple);">2</div>
+                            <div class="stat-label">需人工处理</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" style="color: var(--text-muted);">1</div>
+                            <div class="stat-label">已关闭</div>
+                        </div>
+                    </div>
+
+                    <div class="content-card">
+                        <div class="card-header">
+                            <h3 class="card-title">支付映射列表</h3>
+                            <div class="card-actions">
+                                <button class="btn btn-primary btn-sm" onclick="runSmartMatch()">🔄 批量智能匹配</button>
+                                <button class="btn btn-outline btn-sm" onclick="exportPayments()">📊 导出</button>
+                            </div>
+                        </div>
+
+                        <!-- 筛选器 -->
+                        <div class="filter-bar">
+                            <div class="filter-group">
+                                <label class="filter-label">绑定状态</label>
+                                <select class="filter-select" id="bindStatusFilter">
+                                    <option value="">全部</option>
+                                    <option value="pending">待绑定</option>
+                                    <option value="completed">已绑定</option>
+                                    <option value="expired">已过期</option>
+                                    <option value="manual_required">需人工处理</option>
+                                    <option value="closed">已关闭</option>
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <label class="filter-label">绑定方式</label>
+                                <select class="filter-select" id="bindMethodFilter">
+                                    <option value="">全部</option>
+                                    <option value="dynamic_qrcode">动态二维码</option>
+                                    <option value="user_fill">用户填写</option>
+                                    <option value="smart_match">智能匹配</option>
+                                    <option value="manual">人工绑定</option>
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <label class="filter-label">训练营</label>
+                                <select class="filter-select" id="paymentCampFilter">
+                                    <option value="">全部训练营</option>
+                                    <option value="1">21天早起打卡训练营</option>
+                                    <option value="2">30天阅读习惯养成</option>
+                                    <option value="3">14天冥想入门</option>
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <label class="filter-label">搜索</label>
+                                <input type="text" class="filter-input" placeholder="订单号/微信昵称/星球ID">
+                            </div>
+                        </div>
+
+                        <!-- 数据表格 -->
+                        <div class="data-table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th><input type="checkbox" onclick="toggleAllPayments(this)"></th>
+                                        <th>订单号</th>
+                                        <th>支付金额</th>
+                                        <th>付款人微信</th>
+                                        <th>训练营</th>
+                                        <th>绑定状态</th>
+                                        <th>绑定方式</th>
+                                        <th>绑定截止</th>
+                                        <th>星球用户</th>
+                                        <th>置信度</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- 动态二维码绑定 - 已完成 -->
+                                    <tr>
+                                        <td><input type="checkbox"></td>
+                                        <td><code style="font-size: 11px;">CAMP_1730001_A1B2C3</code></td>
+                                        <td>¥99.00</td>
+                                        <td>小明同学</td>
+                                        <td>21天早起打卡</td>
+                                        <td><span class="status-badge bind-completed">已绑定</span></td>
+                                        <td><span class="method-badge dynamic-qrcode">📱 动态二维码</span></td>
+                                        <td>-</td>
+                                        <td>
+                                            <div style="font-size: 12px;">小明同学</div>
+                                            <div style="font-size: 10px; color: var(--text-muted);">ID: 123456789</div>
+                                        </td>
+                                        <td><span style="color: var(--accent-green); font-weight: 600;">100%</span></td>
+                                        <td>
+                                            <button class="btn btn-text btn-xs" onclick="viewPaymentDetail(1)">详情</button>
+                                        </td>
+                                    </tr>
+                                    <!-- 用户填写绑定 - 已完成 -->
+                                    <tr>
+                                        <td><input type="checkbox"></td>
+                                        <td><code style="font-size: 11px;">CAMP_1730002_D4E5F6</code></td>
+                                        <td>¥99.00</td>
+                                        <td>阅读爱好者</td>
+                                        <td>30天阅读习惯</td>
+                                        <td><span class="status-badge bind-completed">已绑定</span></td>
+                                        <td><span class="method-badge user-fill">✍️ 用户填写</span></td>
+                                        <td>-</td>
+                                        <td>
+                                            <div style="font-size: 12px;">爱读书的人</div>
+                                            <div style="font-size: 10px; color: var(--text-muted);">ID: 987654321</div>
+                                        </td>
+                                        <td><span style="color: var(--accent-green); font-weight: 600;">100%</span></td>
+                                        <td>
+                                            <button class="btn btn-text btn-xs" onclick="viewPaymentDetail(2)">详情</button>
+                                        </td>
+                                    </tr>
+                                    <!-- 待绑定 - 等待用户填写 -->
+                                    <tr style="background: rgba(210, 153, 34, 0.05);">
+                                        <td><input type="checkbox"></td>
+                                        <td><code style="font-size: 11px;">CAMP_1730003_G7H8I9</code></td>
+                                        <td>¥99.00</td>
+                                        <td>微信用户A</td>
+                                        <td>21天早起打卡</td>
+                                        <td><span class="status-badge bind-pending">待绑定</span></td>
+                                        <td><span style="color: var(--text-muted); font-size: 11px;">-</span></td>
+                                        <td>
+                                            <span style="color: var(--accent-orange); font-size: 11px;">2025-12-08</span>
+                                            <div style="font-size: 10px; color: var(--text-muted);">剩余 7 天</div>
+                                        </td>
+                                        <td><span style="color: var(--text-muted);">未绑定</span></td>
+                                        <td>-</td>
+                                        <td>
+                                            <button class="btn btn-outline btn-xs" onclick="manualBind(3)">手动绑定</button>
+                                        </td>
+                                    </tr>
+                                    <!-- 待绑定 - 即将过期 -->
+                                    <tr style="background: rgba(248, 81, 73, 0.05);">
+                                        <td><input type="checkbox"></td>
+                                        <td><code style="font-size: 11px;">CAMP_1730004_J0K1L2</code></td>
+                                        <td>¥99.00</td>
+                                        <td>微信用户B</td>
+                                        <td>14天冥想入门</td>
+                                        <td><span class="status-badge bind-pending">待绑定</span></td>
+                                        <td><span style="color: var(--text-muted); font-size: 11px;">-</span></td>
+                                        <td>
+                                            <span style="color: var(--accent-red); font-size: 11px;">2025-12-02</span>
+                                            <div style="font-size: 10px; color: var(--accent-red);">剩余 1 天 ⚠️</div>
+                                        </td>
+                                        <td><span style="color: var(--text-muted);">未绑定</span></td>
+                                        <td>-</td>
+                                        <td>
+                                            <button class="btn btn-warning btn-xs" onclick="manualBind(4)">手动绑定</button>
+                                        </td>
+                                    </tr>
+                                    <!-- 智能匹配绑定 -->
+                                    <tr>
+                                        <td><input type="checkbox"></td>
+                                        <td><code style="font-size: 11px;">CAMP_1730005_M3N4O5</code></td>
+                                        <td>¥99.00</td>
+                                        <td>早起的鸟儿</td>
+                                        <td>21天早起打卡</td>
+                                        <td><span class="status-badge bind-completed">已绑定</span></td>
+                                        <td><span class="method-badge smart-match">🤖 智能匹配</span></td>
+                                        <td>-</td>
+                                        <td>
+                                            <div style="font-size: 12px;">早起鸟儿</div>
+                                            <div style="font-size: 10px; color: var(--text-muted);">ID: 456789123</div>
+                                        </td>
+                                        <td><span style="color: var(--accent-purple); font-weight: 600;">85%</span></td>
+                                        <td>
+                                            <button class="btn btn-text btn-xs" onclick="viewPaymentDetail(5)">详情</button>
+                                        </td>
+                                    </tr>
+                                    <!-- 已过期 - 需要智能匹配 -->
+                                    <tr style="background: rgba(248, 81, 73, 0.05);">
+                                        <td><input type="checkbox"></td>
+                                        <td><code style="font-size: 11px;">CAMP_1730006_P6Q7R8</code></td>
+                                        <td>¥99.00</td>
+                                        <td>微信用户C</td>
+                                        <td>30天阅读习惯</td>
+                                        <td><span class="status-badge bind-expired">已过期</span></td>
+                                        <td><span style="color: var(--text-muted); font-size: 11px;">-</span></td>
+                                        <td>
+                                            <span style="color: var(--text-muted); font-size: 11px; text-decoration: line-through;">2025-11-25</span>
+                                        </td>
+                                        <td><span style="color: var(--text-muted);">未绑定</span></td>
+                                        <td>-</td>
+                                        <td>
+                                            <button class="btn btn-primary btn-xs" onclick="smartMatchSingle(6)">智能匹配</button>
+                                            <button class="btn btn-outline btn-xs" onclick="manualBind(6)">手动</button>
+                                        </td>
+                                    </tr>
+                                    <!-- 需人工处理 - 智能匹配失败 -->
+                                    <tr style="background: rgba(163, 113, 247, 0.05);">
+                                        <td><input type="checkbox"></td>
+                                        <td><code style="font-size: 11px;">CAMP_1730007_S9T0U1</code></td>
+                                        <td>¥99.00</td>
+                                        <td>🌟星星🌟</td>
+                                        <td>21天早起打卡</td>
+                                        <td><span class="status-badge bind-manual">需人工处理</span></td>
+                                        <td><span style="color: var(--text-muted); font-size: 11px;">匹配失败</span></td>
+                                        <td>-</td>
+                                        <td>
+                                            <span style="color: var(--accent-red); font-size: 11px;">匹配评分 < 50%</span>
+                                        </td>
+                                        <td><span style="color: var(--accent-red); font-weight: 600;">32%</span></td>
+                                        <td>
+                                            <button class="btn btn-warning btn-xs" onclick="manualBind(7)">人工绑定</button>
+                                        </td>
+                                    </tr>
+                                    <!-- 人工绑定 - 已完成 -->
+                                    <tr>
+                                        <td><input type="checkbox"></td>
+                                        <td><code style="font-size: 11px;">CAMP_1730008_V2W3X4</code></td>
+                                        <td>¥99.00</td>
+                                        <td>特殊符号😊</td>
+                                        <td>14天冥想入门</td>
+                                        <td><span class="status-badge bind-completed">已绑定</span></td>
+                                        <td><span class="method-badge manual">👤 人工绑定</span></td>
+                                        <td>-</td>
+                                        <td>
+                                            <div style="font-size: 12px;">冥想爱好者</div>
+                                            <div style="font-size: 10px; color: var(--text-muted);">ID: 789123456</div>
+                                        </td>
+                                        <td><span style="color: var(--accent-green); font-weight: 600;">100%</span></td>
+                                        <td>
+                                            <button class="btn btn-text btn-xs" onclick="viewPaymentDetail(8)">详情</button>
+                                        </td>
+                                    </tr>
+                                    <!-- 已关闭 -->
+                                    <tr style="opacity: 0.6;">
+                                        <td><input type="checkbox"></td>
+                                        <td><code style="font-size: 11px;">CAMP_1730009_Y5Z6A7</code></td>
+                                        <td>¥99.00</td>
+                                        <td>测试账号</td>
+                                        <td>21天早起打卡</td>
+                                        <td><span class="status-badge bind-closed">已关闭</span></td>
+                                        <td><span style="color: var(--text-muted); font-size: 11px;">无法匹配</span></td>
+                                        <td>-</td>
+                                        <td><span style="color: var(--text-muted);">-</span></td>
+                                        <td>-</td>
+                                        <td>
+                                            <button class="btn btn-text btn-xs" onclick="viewPaymentDetail(9)">详情</button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- 分页 -->
+                        <div class="pagination">
+                            <button class="pagination-btn" disabled>上一页</button>
+                            <span class="pagination-info">第 1 页，共 17 页（167 条记录）</span>
+                            <button class="pagination-btn">下一页</button>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Refunds Page -->
                 <div class="page" id="refundsPage">
                     <h1 class="page-title">退款审核</h1>
@@ -3132,12 +3587,23 @@
                                         </select>
                                     </div>
                                     <div class="filter-group">
+                                        <span class="filter-label">绑定方式：</span>
+                                        <select class="filter-select" id="refundBindMethodFilter" onchange="filterRefunds()">
+                                            <option value="">全部</option>
+                                            <option value="dynamic_qrcode">动态二维码</option>
+                                            <option value="user_fill">用户填写</option>
+                                            <option value="smart_match">智能匹配</option>
+                                            <option value="manual">人工绑定</option>
+                                        </select>
+                                    </div>
+                                    <div class="filter-group">
                                         <span class="filter-label">匹配置信度：</span>
                                         <select class="filter-select" id="refundConfidenceFilter" onchange="filterRefunds()">
                                             <option value="">全部</option>
                                             <option value="100">100%</option>
-                                            <option value="66">66%</option>
-                                            <option value="33">33%</option>
+                                            <option value="80">≥80%</option>
+                                            <option value="50">50-79%</option>
+                                            <option value="low"><50%</option>
                                         </select>
                                     </div>
                                     <div class="filter-group">
@@ -3159,6 +3625,7 @@
                                             <th>训练营</th>
                                             <th>打卡完成</th>
                                             <th>退款金额</th>
+                                            <th>绑定方式</th>
                                             <th>匹配置信度</th>
                                             <th>系统判断</th>
                                             <th>操作</th>
@@ -3176,6 +3643,7 @@
                                                 <span style="color: var(--accent-green);">16/15 ✓</span>
                                             </td>
                                             <td style="color: var(--accent-orange); font-weight: 600;">¥99</td>
+                                            <td><span class="method-badge dynamic-qrcode">📱 动态二维码</span></td>
                                             <td>
                                                 <div class="confidence high">
                                                     <span class="confidence-dot"></span>
@@ -3202,6 +3670,7 @@
                                                 <span style="color: var(--accent-green);">15/15 ✓</span>
                                             </td>
                                             <td style="color: var(--accent-orange); font-weight: 600;">¥99</td>
+                                            <td><span class="method-badge smart-match">🤖 智能匹配</span></td>
                                             <td>
                                                 <div class="confidence medium">
                                                     <span class="confidence-dot"></span>
@@ -3228,6 +3697,7 @@
                                                 <span style="color: var(--accent-red);">14/15 ✗</span>
                                             </td>
                                             <td style="color: var(--text-muted);">¥99</td>
+                                            <td><span class="method-badge user-fill">✍️ 用户填写</span></td>
                                             <td>
                                                 <div class="confidence high">
                                                     <span class="confidence-dot"></span>
@@ -3240,6 +3710,33 @@
                                                     <button class="action-btn approve" onclick="event.stopPropagation(); approveRefund('R003')" style="opacity: 0.5;" title="不符合退款条件">通过</button>
                                                     <button class="action-btn reject" onclick="event.stopPropagation(); openRejectModal('R003')">拒绝</button>
                                                     <button class="action-btn view" onclick="event.stopPropagation(); viewRefundDetail('R003')">详情</button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr data-refund-id="R004" data-judgment="qualified" onclick="viewRefundDetail('R004')">
+                                            <td onclick="event.stopPropagation()"><input type="checkbox" class="checkbox refund-checkbox" value="R004" onchange="updateRefundSelection()"></td>
+                                            <td>
+                                                <strong>阅读爱好者</strong>
+                                                <br><small style="color: var(--text-muted);">ID: 88123459</small>
+                                            </td>
+                                            <td>30天阅读习惯</td>
+                                            <td>
+                                                <span style="color: var(--accent-green);">25/21 ✓</span>
+                                            </td>
+                                            <td style="color: var(--accent-orange); font-weight: 600;">¥99</td>
+                                            <td><span class="method-badge manual">👤 人工绑定</span></td>
+                                            <td>
+                                                <div class="confidence high">
+                                                    <span class="confidence-dot"></span>
+                                                    <span>100%</span>
+                                                </div>
+                                            </td>
+                                            <td><span class="status-badge success">✓ 符合条件</span></td>
+                                            <td>
+                                                <div class="action-btns">
+                                                    <button class="action-btn approve" onclick="event.stopPropagation(); approveRefund('R004')">通过</button>
+                                                    <button class="action-btn reject" onclick="event.stopPropagation(); openRejectModal('R004')">拒绝</button>
+                                                    <button class="action-btn view" onclick="event.stopPropagation(); viewRefundDetail('R004')">详情</button>
                                                 </div>
                                             </td>
                                         </tr>
@@ -3302,6 +3799,7 @@
                                             <th>训练营</th>
                                             <th>打卡完成</th>
                                             <th>退款金额</th>
+                                            <th>绑定方式</th>
                                             <th>审核时间</th>
                                             <th>审核人</th>
                                             <th>退款状态</th>
@@ -3319,6 +3817,7 @@
                                                 <span style="color: var(--accent-green);">18/15 ✓</span>
                                             </td>
                                             <td style="color: var(--accent-green); font-weight: 600;">¥99</td>
+                                            <td><span class="method-badge dynamic-qrcode">📱 动态二维码</span></td>
                                             <td>2025-01-14 10:30</td>
                                             <td>管理员</td>
                                             <td><span class="status-badge success">✓ 已退款</span></td>
@@ -3336,6 +3835,7 @@
                                                 <span style="color: var(--accent-green);">16/15 ✓</span>
                                             </td>
                                             <td style="color: var(--accent-orange); font-weight: 600;">¥99</td>
+                                            <td><span class="method-badge user-fill">✍️ 用户填写</span></td>
                                             <td>2025-01-14 10:25</td>
                                             <td>管理员</td>
                                             <td><span class="status-badge failed">✗ 退款失败</span></td>
@@ -3354,6 +3854,7 @@
                                                 <span style="color: var(--accent-red);">4/5 ✗</span>
                                             </td>
                                             <td style="color: var(--text-muted);">¥49</td>
+                                            <td><span class="method-badge smart-match">🤖 智能匹配</span></td>
                                             <td>2025-01-13 15:20</td>
                                             <td>教练A</td>
                                             <td><span class="status-badge rejected">✗ 已拒绝</span></td>
@@ -3371,6 +3872,7 @@
                                                 <span style="color: var(--accent-green);">7/5 ✓</span>
                                             </td>
                                             <td style="color: var(--accent-green); font-weight: 600;">¥49</td>
+                                            <td><span class="method-badge manual">👤 人工绑定</span></td>
                                             <td>2025-01-12 09:15</td>
                                             <td>管理员</td>
                                             <td><span class="status-badge success">✓ 已退款</span></td>
@@ -5413,6 +5915,7 @@
                 'camps': '训练营管理',
                 'members': '会员管理',
                 'checkins': '打卡管理',
+                'payments': '支付映射',
                 'refunds': '退款审核',
                 'statistics': '统计报表',
                 'system': '系统管理'

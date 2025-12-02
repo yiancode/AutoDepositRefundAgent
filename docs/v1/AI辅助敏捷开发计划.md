@@ -538,11 +538,11 @@ CREATE INDEX idx_auth_session_state ON auth_session(state);
 ## Stage 2：支付集成（混合方案）（5天）
 
 ### 🎯 目标
-完成企业微信支付集成，实现动态二维码 + 支付后绑定混合方案（对应技术方案 Stage 2）
+完成微信支付集成，实现动态二维码 + 支付后绑定混合方案（对应技术方案 Stage 2）
 
 ### 📦 任务拆分
 
-#### 任务 2.1：企业微信支付 SDK 封装
+#### 任务 2.1：微信支付 SDK 封装
 - **优先级**：P0
 - **预计时间**：4 小时
 - **交付物**：WechatPayManager 类
@@ -553,7 +553,7 @@ CREATE INDEX idx_auth_session_state ON auth_session(state);
 #### 🤖 AI 提示词（任务 2.1）
 
 ```markdown
-我需要封装企业微信支付 API，请帮我完成以下任务：
+我需要封装微信支付 API，请帮我完成以下任务：
 
 【WechatPayManager.java】（com.camp.manager）
 

@@ -2,7 +2,7 @@
 
 > **适用场景**：全程使用 AI 进行编码，人工只负责关键设计和功能测试
 > **开发模式**：Vibe Coding（AI 驱动开发）
-> **总时长**：27 天（6 个 Stage + 集成测试）
+> **总时长**：28 天（6 个 Stage + 集成测试）
 > **原则**：每个迭代都能独立运行和测试
 
 ---
@@ -38,7 +38,7 @@
 | Stage | 时长 | 目标 | 交付物 | 对应技术方案 |
 |-------|------|------|--------|--------------|
 | Stage 0 | 3天 | 环境搭建和项目骨架 | 可运行的前后端骨架 + 16张表 | - |
-| Stage 1 | 4天 | 基础框架 + 训练营CRUD | JWT认证 + 训练营管理 | ✅ Stage 1 |
+| Stage 1 | 5天 | 基础框架 + 训练营CRUD + OAuth | JWT认证 + 训练营管理 + 微信授权 | ✅ Stage 1 |
 | Stage 2 | 5天 | 支付集成（混合方案） | 动态二维码 + 支付后绑定 | ✅ Stage 2 |
 | Stage 3 | 4天 | 打卡同步 | 知识星球API + 定时任务 | ✅ Stage 3 |
 | Stage 4 | 3天 | 混合匹配算法 | bind_status优先 + 智能匹配 | ✅ Stage 4 |
@@ -303,10 +303,10 @@ request.interceptors.response.use(response => {
 
 ---
 
-## Stage 1：基础框架 + 训练营 CRUD（4天）
+## Stage 1：基础框架 + 训练营 CRUD + OAuth（5天）
 
 ### 🎯 目标
-完成 JWT 认证、训练营 CRUD、基础接口（对应技术方案 Stage 1）
+完成 JWT 认证、微信公众号 OAuth、训练营 CRUD、基础接口（对应技术方案 Stage 1）
 
 ### 📦 任务拆分
 
@@ -421,6 +421,117 @@ request.interceptors.response.use(response => {
 - **验收标准**：
   - ✅ 自动将 enrolling → ongoing（到达开始日期）
   - ✅ 自动将 ongoing → ended（到达结束日期）
+
+---
+
+#### 任务 1.5：微信公众号 OAuth 集成
+- **优先级**：P0
+- **预计时间**：5 小时
+- **交付物**：AuthController + FastAuthService + WechatOAuthManager + auth_session CRUD
+- **验收标准**：
+  - ✅ 用户点击授权链接能正确跳转到微信授权页
+  - ✅ 授权成功后能获取用户 openid
+  - ✅ 会话管理和身份绑定功能正常
+  - ✅ 所有接口通过 Postman 测试
+
+#### 🤖 AI 提示词（任务 1.5）
+
+```markdown
+我需要实现微信公众号 OAuth 2.0 授权集成，请严格按照《接口文档.md》第二章和《FastAuth接入方案.md》实现：
+
+【接口清单】（参考接口文档 2.1-2.3）
+1. GET /api/auth/authorize?planetUserId={planetUserId}&redirectUrl={url}
+   - 发起微信 OAuth 授权流程
+   - 生成 state 参数并存入 Redis（5分钟有效期）
+   - 重定向到微信授权页
+
+2. GET /api/auth/callback/wechat-mp?code={code}&state={state}
+   - 处理微信授权回调
+   - 用 code 换取 access_token 和 openid
+   - 创建 auth_session 记录
+   - 重定向回前端页面
+
+3. POST /api/auth/bindPlanet
+   - 绑定知识星球身份
+   - 验证 sessionKey 和 planetUserId
+   - 更新 auth_session.planet_user_id
+   - 创建/更新 camp_member 记录
+
+【核心组件】
+
+1. WechatOAuthManager.java（com.camp.manager）
+   - 方法：getAuthUrl(state, redirectUrl) → 生成微信授权链接
+   - 方法：getAccessToken(code) → 用 code 换取 openid
+   - 配置读取：从 system_config 表读取 wechat.mp.appid 和 wechat.mp.secret
+
+2. AuthService.java（com.camp.service）
+   - 方法：initiateAuth(planetUserId, redirectUrl) → 创建授权会话
+   - 方法：handleCallback(code, state) → 处理回调
+   - 方法：bindPlanet(sessionKey, planetUserId) → 绑定星球身份
+
+3. AuthController.java（com.camp.controller）
+   - GET /api/auth/authorize
+   - GET /api/auth/callback/wechat-mp
+   - POST /api/auth/bindPlanet
+
+【数据库表】（参考数据库设计 auth_session）
+```sql
+CREATE TABLE auth_session (
+    id BIGSERIAL PRIMARY KEY,
+    session_key VARCHAR(100) UNIQUE NOT NULL,  -- UUID v4
+    wechat_openid VARCHAR(100),                -- 微信 openid
+    planet_user_id VARCHAR(50),                -- 知识星球用户ID
+    status VARCHAR(20) NOT NULL,               -- pending, completed, expired
+    state VARCHAR(100),                        -- OAuth state 参数
+    redirect_url TEXT,                         -- 前端回调地址
+    expires_at TIMESTAMP NOT NULL,             -- 会话过期时间
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_auth_session_openid ON auth_session(wechat_openid);
+CREATE INDEX idx_auth_session_planet_user ON auth_session(planet_user_id);
+CREATE INDEX idx_auth_session_state ON auth_session(state);
+```
+
+【OAuth 授权流程】（参考 FastAuth接入方案.md）
+
+1. 用户点击授权链接 → GET /api/auth/authorize?planetUserId=xxx&redirectUrl=xxx
+2. 后端生成 state 参数：UUID.randomUUID().toString()
+3. 将 state 存入 Redis：key=oauth:state:{state}, value={planetUserId, redirectUrl}, ttl=5分钟
+4. 创建 auth_session 记录：session_key=UUID, status=pending, state=xxx
+5. 构造微信授权链接并重定向：
+   ```
+   https://open.weixin.qq.com/connect/oauth2/authorize?
+   appid={WECHAT_MP_APPID}&
+   redirect_uri={WECHAT_MP_OAUTH_CALLBACK_URL}&
+   response_type=code&
+   scope=snsapi_userinfo&
+   state={state}#wechat_redirect
+   ```
+
+6. 用户在微信授权页同意授权
+7. 微信重定向回 GET /api/auth/callback/wechat-mp?code=xxx&state=xxx
+8. 后端验证 state（从 Redis 读取）
+9. 用 code 换取 access_token 和 openid（调用微信 API）
+10. 更新 auth_session：wechat_openid=xxx, status=completed
+11. 重定向到前端 redirectUrl，携带 sessionKey
+
+【配置读取】
+从 system_config 表读取：
+- wechat.mp.appid
+- wechat.mp.secret
+- wechat.mp.oauth_callback_url
+
+【验收标准】
+1. 授权链接能正确跳转到微信授权页
+2. 授权成功后能获取 openid 并创建 auth_session
+3. 绑定接口能正确关联知识星球用户
+4. 会话过期后无法使用
+5. 所有异常情况有明确错误提示
+
+请生成完整的代码和单元测试。
+```
 
 ---
 

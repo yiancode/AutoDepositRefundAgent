@@ -44,14 +44,23 @@
 在现有 `planet_user` 表基础上增加会员相关字段：
 
 ```sql
--- 修改 planet_user 表，增加会员相关字段
-ALTER TABLE planet_user ADD COLUMN IF NOT EXISTS user_number INTEGER COMMENT '星球编号';
-ALTER TABLE planet_user ADD COLUMN IF NOT EXISTS avatar_url VARCHAR(500) COMMENT '头像URL';
-ALTER TABLE planet_user ADD COLUMN IF NOT EXISTS joined_at TIMESTAMP COMMENT '加入星球时间';
-ALTER TABLE planet_user ADD COLUMN IF NOT EXISTS role VARCHAR(20) DEFAULT 'member' COMMENT '角色: owner/admin/member';
-ALTER TABLE planet_user ADD COLUMN IF NOT EXISTS member_status VARCHAR(20) DEFAULT 'active' COMMENT '会员状态: active/expired/banned';
-ALTER TABLE planet_user ADD COLUMN IF NOT EXISTS raw_data JSONB COMMENT '原始API返回数据';
-ALTER TABLE planet_user ADD COLUMN IF NOT EXISTS synced_at TIMESTAMP COMMENT '最后同步时间';
+-- 修改 planet_user 表，增加会员相关字段（PostgreSQL 语法）
+ALTER TABLE planet_user ADD COLUMN IF NOT EXISTS user_number VARCHAR(20);
+ALTER TABLE planet_user ADD COLUMN IF NOT EXISTS avatar_url VARCHAR(500);
+ALTER TABLE planet_user ADD COLUMN IF NOT EXISTS joined_at TIMESTAMP;
+ALTER TABLE planet_user ADD COLUMN IF NOT EXISTS role VARCHAR(20) DEFAULT 'member';
+ALTER TABLE planet_user ADD COLUMN IF NOT EXISTS member_status VARCHAR(20) DEFAULT 'active';
+ALTER TABLE planet_user ADD COLUMN IF NOT EXISTS raw_data JSONB;
+ALTER TABLE planet_user ADD COLUMN IF NOT EXISTS synced_at TIMESTAMP;
+
+-- 字段注释（PostgreSQL 使用 COMMENT ON COLUMN 语法）
+COMMENT ON COLUMN planet_user.user_number IS '星球编号';
+COMMENT ON COLUMN planet_user.avatar_url IS '头像URL';
+COMMENT ON COLUMN planet_user.joined_at IS '加入星球时间';
+COMMENT ON COLUMN planet_user.role IS '角色: owner/admin/member';
+COMMENT ON COLUMN planet_user.member_status IS '会员状态: active/expired/banned';
+COMMENT ON COLUMN planet_user.raw_data IS '原始API返回数据';
+COMMENT ON COLUMN planet_user.synced_at IS '最后同步时间';
 
 -- 创建索引
 CREATE INDEX IF NOT EXISTS idx_planet_user_number ON planet_user(user_number) WHERE deleted_at IS NULL;
@@ -64,40 +73,38 @@ COMMENT ON TABLE planet_user IS '知识星球用户/会员表';
 #### 2.3.2 新增同步日志表
 
 ```sql
--- 同步日志表（新增）
+-- 同步日志表（新增，PostgreSQL 语法）
 CREATE TABLE sync_log (
     id BIGSERIAL PRIMARY KEY,
 
     -- 同步目标
-    sync_target VARCHAR(50) NOT NULL COMMENT '同步目标: member/checkin',
-    planet_id VARCHAR(50) COMMENT '星球ID（可选，为空表示全局同步）',
-    camp_id BIGINT COMMENT '训练营ID（可选，打卡同步时使用）',
+    sync_target VARCHAR(50) NOT NULL,
+    planet_id VARCHAR(50),
+    camp_id BIGINT,
 
     -- 同步类型和范围
-    sync_type VARCHAR(20) NOT NULL COMMENT '同步类型: full-全量/incremental-增量',
+    sync_type VARCHAR(20) NOT NULL,
 
     -- 同步统计
-    total_count INTEGER DEFAULT 0 COMMENT '总处理数量',
-    success_count INTEGER DEFAULT 0 COMMENT '成功数量',
-    failed_count INTEGER DEFAULT 0 COMMENT '失败数量',
-    new_count INTEGER DEFAULT 0 COMMENT '新增数量',
-    update_count INTEGER DEFAULT 0 COMMENT '更新数量',
+    total_count INTEGER DEFAULT 0,
+    success_count INTEGER DEFAULT 0,
+    failed_count INTEGER DEFAULT 0,
+    new_count INTEGER DEFAULT 0,
+    update_count INTEGER DEFAULT 0,
 
     -- 执行状态
-    status VARCHAR(20) NOT NULL DEFAULT 'running'
-        COMMENT '状态: running-执行中/success-成功/failed-失败/partial-部分成功',
-    error_message TEXT COMMENT '错误信息',
-    error_detail JSONB COMMENT '错误详情（批量时记录每条失败原因）',
+    status VARCHAR(20) NOT NULL DEFAULT 'running',
+    error_message TEXT,
+    error_detail JSONB,
 
     -- 时间信息
-    started_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '开始时间',
-    finished_at TIMESTAMP COMMENT '结束时间',
-    duration_ms INTEGER COMMENT '执行耗时（毫秒）',
+    started_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    finished_at TIMESTAMP,
+    duration_ms INTEGER,
 
     -- 触发信息
-    trigger_type VARCHAR(20) NOT NULL DEFAULT 'scheduled'
-        COMMENT '触发类型: scheduled-定时/manual-手动',
-    trigger_user_id BIGINT COMMENT '手动触发时的操作人ID',
+    trigger_type VARCHAR(20) NOT NULL DEFAULT 'scheduled',
+    trigger_user_id BIGINT,
 
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -109,7 +116,25 @@ CREATE INDEX idx_sync_log_started ON sync_log(started_at DESC);
 CREATE INDEX idx_sync_log_planet ON sync_log(planet_id) WHERE planet_id IS NOT NULL;
 CREATE INDEX idx_sync_log_camp ON sync_log(camp_id) WHERE camp_id IS NOT NULL;
 
+-- 字段注释（PostgreSQL 语法）
 COMMENT ON TABLE sync_log IS '数据同步日志表';
+COMMENT ON COLUMN sync_log.sync_target IS '同步目标: member/checkin';
+COMMENT ON COLUMN sync_log.planet_id IS '星球ID（可选，为空表示全局同步）';
+COMMENT ON COLUMN sync_log.camp_id IS '训练营ID（可选，打卡同步时使用）';
+COMMENT ON COLUMN sync_log.sync_type IS '同步类型: full-全量/incremental-增量';
+COMMENT ON COLUMN sync_log.total_count IS '总处理数量';
+COMMENT ON COLUMN sync_log.success_count IS '成功数量';
+COMMENT ON COLUMN sync_log.failed_count IS '失败数量';
+COMMENT ON COLUMN sync_log.new_count IS '新增数量';
+COMMENT ON COLUMN sync_log.update_count IS '更新数量';
+COMMENT ON COLUMN sync_log.status IS '状态: running-执行中/success-成功/failed-失败/partial-部分成功';
+COMMENT ON COLUMN sync_log.error_message IS '错误信息';
+COMMENT ON COLUMN sync_log.error_detail IS '错误详情（批量时记录每条失败原因）';
+COMMENT ON COLUMN sync_log.started_at IS '开始时间';
+COMMENT ON COLUMN sync_log.finished_at IS '结束时间';
+COMMENT ON COLUMN sync_log.duration_ms IS '执行耗时（毫秒）';
+COMMENT ON COLUMN sync_log.trigger_type IS '触发类型: scheduled-定时/manual-手动';
+COMMENT ON COLUMN sync_log.trigger_user_id IS '手动触发时的操作人ID';
 ```
 
 ### 2.4 Manager 层扩展

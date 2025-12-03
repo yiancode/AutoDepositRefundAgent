@@ -401,36 +401,52 @@ public class MemberSyncService {
     }
 
     /**
-     * 增量同步会员（只同步最近加入的）
+     * 增量同步会员（分页拉取所有数据，更新已存在会员信息）
      */
     @Transactional
     public Long incrementalSync(String planetId, String triggerType, Long triggerId) {
         SyncLog syncLog = createSyncLog(planetId, "incremental", triggerType, triggerId);
 
         try {
-            // 只拉取第一页（最新的100条）
-            PlanetMemberPageResult page = planetApiManager.getMembersPage(planetId, null, 100);
-
-            if (page == null || page.getMembers().isEmpty()) {
-                finishSyncLog(syncLog, 0, 0, 0, "success", null);
-                return syncLog.getId();
-            }
-
+            int totalProcessed = 0;
             int newCount = 0;
             int updateCount = 0;
+            String endTime = null;  // 分页游标
 
-            for (PlanetMemberDTO member : page.getMembers()) {
-                // 检查是否已存在
-                PlanetUser existing = planetUserMapper.findByPlanetUserId(member.getUserId());
-                if (existing == null) {
-                    // 新会员，保存
-                    saveOrUpdateMember(planetId, member);
-                    newCount++;
+            // 分页拉取直到为空
+            while (true) {
+                PlanetMemberPageResult page = planetApiManager.getMembersPage(
+                    planetId,
+                    endTime,
+                    100  // 每页 100 条
+                );
+
+                if (page == null || page.getMembers().isEmpty()) {
+                    break;  // 没有更多数据
                 }
-                // 已存在的跳过（增量同步不更新已有会员）
+
+                // 处理当前页的会员
+                for (PlanetMemberDTO member : page.getMembers()) {
+                    boolean isNew = saveOrUpdateMember(planetId, member);
+                    if (isNew) {
+                        newCount++;
+                    } else {
+                        updateCount++;
+                    }
+                    totalProcessed++;
+                }
+
+                // 更新分页游标
+                endTime = page.getEndTime();
+                if (endTime == null || endTime.isEmpty()) {
+                    break;  // 最后一页
+                }
+
+                // 防止过快请求，休眠 100ms
+                Thread.sleep(100);
             }
 
-            finishSyncLog(syncLog, page.getMembers().size(), newCount, updateCount, "success", null);
+            finishSyncLog(syncLog, totalProcessed, newCount, updateCount, "success", null);
 
         } catch (Exception e) {
             log.error("增量同步失败: planetId={}", planetId, e);
@@ -1205,6 +1221,17 @@ fastauth:
     client-secret: ${WECHAT_MP_APP_SECRET}
     redirect-uri: https://your-domain.com/api/auth/callback/wechat-mp
 
+# 应用配置
+app:
+  auth:
+    # returnUrl 白名单（防止开放重定向攻击）
+    # 支持精确匹配和通配符（*.example.com）
+    allowed-return-urls:
+      - localhost             # 开发环境
+      - 127.0.0.1             # 本地测试
+      - *.your-domain.com     # 生产域名（支持所有子域名）
+      - your-domain.com       # 主域名
+
 # JWT 配置
 jwt:
   secret: ${JWT_SECRET}
@@ -1311,6 +1338,13 @@ public class AuthController {
     private final UserService userService;
     private final JwtTokenProvider jwtTokenProvider;
     private final MemberVerifyService memberVerifyService;
+    private final RedisTemplate<String, String> redisTemplate;
+
+    @Value("${app.auth.allowed-return-urls}")
+    private List<String> allowedReturnUrls;
+
+    private static final String RETURN_URL_PREFIX = "auth:return_url:";
+    private static final long RETURN_URL_TIMEOUT = 5 * 60 * 1000; // 5分钟
 
     /**
      * 获取微信公众号授权地址
@@ -1321,9 +1355,23 @@ public class AuthController {
 
         String state = AuthStateUtils.createState();
 
-        // 如果有 returnUrl，编码到 state 中
+        // 如果有 returnUrl，验证并存储到 Redis
         if (StringUtils.hasText(returnUrl)) {
-            state = state + "|" + Base64.encode(returnUrl);
+            // 安全检查：验证 returnUrl 是否在白名单内
+            if (!isAllowedReturnUrl(returnUrl)) {
+                return Result.fail("非法的重定向地址");
+            }
+
+            // 生成短 ID，将 returnUrl 存储到 Redis（5分钟过期）
+            String returnUrlId = UUID.randomUUID().toString();
+            redisTemplate.opsForValue().set(
+                RETURN_URL_PREFIX + returnUrlId,
+                returnUrl,
+                RETURN_URL_TIMEOUT,
+                TimeUnit.MILLISECONDS
+            );
+
+            state = state + "|" + returnUrlId;
         }
 
         String authorizeUrl = wechatMpAuthRequest.authorize(state);
@@ -1351,10 +1399,15 @@ public class AuthController {
         // 2. 生成 JWT Token
         String token = jwtTokenProvider.generateToken(user);
 
-        // 3. 解析 returnUrl
-        String returnUrl = parseReturnUrl(callback.getState());
+        // 3. 从 Redis 读取 returnUrl（读取后立即删除，确保一次性使用）
+        String returnUrl = getAndDeleteReturnUrl(callback.getState());
 
-        // 4. 重定向到前端，带上 token
+        // 4. 二次验证 returnUrl（防御性编程）
+        if (StringUtils.hasText(returnUrl) && !isAllowedReturnUrl(returnUrl)) {
+            returnUrl = null; // 丢弃非法 URL
+        }
+
+        // 5. 重定向到前端，带上 token
         String redirectUrl = StringUtils.hasText(returnUrl)
             ? returnUrl + "?token=" + token
             : "/dashboard?token=" + token;
@@ -1387,15 +1440,79 @@ public class AuthController {
         return Result.success();
     }
 
-    private String parseReturnUrl(String state) {
+    /**
+     * 从 state 中提取 returnUrlId，并从 Redis 读取原始 URL（读取后立即删除）
+     */
+    private String getAndDeleteReturnUrl(String state) {
         if (state != null && state.contains("|")) {
             String[] parts = state.split("\\|", 2);
-            return Base64.decode(parts[1]);
+            String returnUrlId = parts[1];
+            String key = RETURN_URL_PREFIX + returnUrlId;
+
+            // 读取并删除（原子操作）
+            String returnUrl = redisTemplate.opsForValue().get(key);
+            if (returnUrl != null) {
+                redisTemplate.delete(key);
+            }
+            return returnUrl;
         }
         return null;
     }
+
+    /**
+     * 验证 returnUrl 是否在白名单内
+     */
+    private boolean isAllowedReturnUrl(String returnUrl) {
+        if (allowedReturnUrls == null || allowedReturnUrls.isEmpty()) {
+            return false;
+        }
+
+        try {
+            URI uri = new URI(returnUrl);
+            String host = uri.getHost();
+
+            // 检查域名是否在白名单内
+            for (String allowedPattern : allowedReturnUrls) {
+                if (allowedPattern.startsWith("*") && host.endsWith(allowedPattern.substring(1))) {
+                    return true; // 支持通配符 *.example.com
+                } else if (host.equals(allowedPattern)) {
+                    return true;
+                }
+            }
+        } catch (URISyntaxException e) {
+            return false; // URL 格式非法
+        }
+
+        return false;
+    }
 }
 ```
+
+**🔒 安全说明：防止开放重定向攻击**
+
+上述实现采用了多层防护策略：
+
+1. **白名单验证**：只允许配置的域名作为重定向目标，支持通配符匹配（如 `*.example.com`）
+2. **Redis 存储**：将 returnUrl 存储在 Redis 而非直接编码到 URL 中，防止参数篡改
+3. **一次性使用**：returnUrl 读取后立即删除，防止重放攻击
+4. **有效期限制**：5 分钟自动过期，减小攻击窗口
+5. **二次验证**：回调处理时再次验证 returnUrl 是否在白名单内（防御性编程）
+
+**风险场景示例**（已修复）：
+```
+# 攻击者构造恶意链接
+/api/auth/authorize?returnUrl=https://evil.com/steal
+
+# 用户授权后，token 被泄露到恶意网站
+https://evil.com/steal?token=eyJhbGc...
+```
+
+**修复后的流程**：
+1. 前端请求 `/api/auth/authorize?returnUrl=https://app.example.com/dashboard`
+2. 后端验证 `app.example.com` 在白名单内 → 通过
+3. 生成 UUID（如 `abc123`），将 returnUrl 存入 Redis: `auth:return_url:abc123`
+4. 返回授权 URL，state = `random_state|abc123`
+5. 回调时从 Redis 读取并删除 returnUrl，二次验证后重定向
 
 #### 3.4.4 用户服务
 
@@ -1455,14 +1572,21 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public void bindPlanetMember(Long userId, MemberVO member) {
-        // 检查是否已绑定
-        UserPlanetBinding existing = bindingMapper.findByUserId(userId);
-
-        if (existing != null) {
-            throw new BusinessException("已绑定星球账号");
+        // 1. 检查当前用户是否已绑定
+        UserPlanetBinding existingByUser = bindingMapper.findByUserId(userId);
+        if (existingByUser != null) {
+            throw new BusinessException("您已绑定星球账号，无法重复绑定");
         }
 
-        // 创建绑定关系
+        // 2. 检查该星球账号是否已被其他用户绑定
+        UserPlanetBinding existingByPlanet = bindingMapper.findByPlanetUserId(member.getPlanetUserId());
+        if (existingByPlanet != null) {
+            throw new BusinessException(
+                "该星球账号已被其他用户绑定，一个星球账号只能绑定一个系统用户"
+            );
+        }
+
+        // 3. 创建绑定关系
         UserPlanetBinding binding = new UserPlanetBinding();
         binding.setUserId(userId);
         binding.setPlanetUserId(member.getPlanetUserId());
@@ -1470,7 +1594,13 @@ public class UserServiceImpl implements UserService {
         binding.setPlanetNickname(member.getNickname());
         binding.setVerified(true);
         binding.setCreatedAt(LocalDateTime.now());
-        bindingMapper.insert(binding);
+
+        try {
+            bindingMapper.insert(binding);
+        } catch (DuplicateKeyException e) {
+            // 防御性编程：即使前面检查过，仍可能因并发导致冲突
+            throw new BusinessException("绑定失败，该账号可能已被占用，请重试");
+        }
     }
 }
 ```
@@ -1519,7 +1649,8 @@ CREATE TABLE user_planet_binding (
     planet_nickname     VARCHAR(100),
     verified            BOOLEAN DEFAULT false,
     created_at          TIMESTAMP DEFAULT NOW(),
-    UNIQUE(user_id)
+    UNIQUE(user_id),              -- 一个用户只能绑定一个星球账号
+    UNIQUE(planet_user_id)        -- 一个星球账号只能被一个用户绑定
 );
 
 CREATE INDEX idx_oauth_user ON user_oauth(user_id);

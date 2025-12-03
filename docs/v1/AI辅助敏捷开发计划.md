@@ -37,8 +37,8 @@
 
 | Stage | 时长 | 目标 | 交付物 | 对应技术方案 |
 |-------|------|------|--------|--------------|
-| Stage 0 | 3天 | 环境搭建和项目骨架 | 可运行的前后端骨架 + 16张表 | - |
-| Stage 1 | 5天 | 基础框架 + 训练营CRUD + OAuth | JWT认证 + 训练营管理 + 微信授权 | ✅ Stage 1 |
+| Stage 0 | 2天 | **最小环境骨架**（已缩减） | 后端骨架 + 核心4表 + H5骨架 | ⚠️ 不含完整16表，不含管理后台 |
+| Stage 1 | 5天 | 基础框架 + 训练营CRUD + OAuth + **管理后台骨架** | JWT认证 + 训练营管理 + 微信授权 + 管理后台 | ✅ Stage 1 |
 | Stage 2 | 5天 | 支付集成（混合方案） | 动态二维码 + 支付后绑定 | ✅ Stage 2 |
 | Stage 3 | 4天 | 打卡同步 | 知识星球API + 定时任务 | ✅ Stage 3 |
 | Stage 4 | 3天 | 混合匹配算法 | bind_status优先 + 智能匹配 | ✅ Stage 4 |
@@ -50,7 +50,15 @@
 ## Stage 0：环境搭建和项目骨架（3天）
 
 ### 🎯 目标
-搭建可运行的前后端骨架，完成 16 张表初始化
+搭建可运行的最小后端骨架 + 核心数据表，验证技术栈可行性
+
+**最小可测试单元原则**：
+- ✅ 后端项目能启动，API 文档可访问
+- ✅ 数据库连接成功，核心表创建成功
+- ✅ H5 前端骨架能启动（仅验证技术栈）
+- ❌ 不包含完整的 16 张表（按需在后续 Stage 创建）
+- ❌ 不包含完整的页面和路由（在功能开发时创建）
+- ❌ 不包含管理后台（移至 Stage 1）
 
 ### 📦 任务拆分
 
@@ -154,152 +162,133 @@ backend/
 
 ---
 
-#### 任务 0.2：数据库脚本生成（16张表）
+#### 任务 0.2：核心数据表创建（最小集合）
 - **优先级**：P0
-- **预计时间**：3 小时
-- **交付物**：完整的数据库初始化脚本
+- **预计时间**：2 小时
+- **交付物**：核心 4 张表的数据库脚本
 - **验收标准**：
-  - ✅ 执行 SQL 脚本成功创建 16 张表
+  - ✅ 执行 SQL 脚本成功创建 4 张核心表
   - ✅ 索引创建成功
-  - ✅ 触发器工作正常
+  - ✅ 数据库连接测试通过
+
+**核心表清单**（其他表在后续 Stage 按需创建）：
+1. `training_camp` - 训练营基本信息
+2. `planet_user` - 知识星球用户信息
+3. `system_user` - 系统用户（管理员）
+4. `system_config` - 系统配置
 
 #### 🤖 AI 提示词（任务 0.2）
 
 ```markdown
-我需要生成 PostgreSQL 数据库初始化脚本，请严格按照《数据库设计.md》创建以下内容：
+我需要生成 PostgreSQL 数据库初始化脚本，创建 **最小核心表集合**（4张表）：
 
-【表清单】（共 16 张表）
+【表清单】
+1. **training_camp** - 训练营基本信息
+   - 关键字段：id, name, description, deposit_amount, start_date, end_date, status, created_at, updated_at
+   - 索引：status, start_date
 
-**核心业务表（6张）**：
-1. training_camp - 训练营基本信息
-2. camp_member - 训练营会员（含匹配信息）
-3. planet_user - 知识星球用户信息
-4. payment_record - 支付记录（含 bind_status、bind_method、bind_deadline）
-5. refund_record - 退款记录
-6. checkin_record - 打卡记录
+2. **planet_user** - 知识星球用户信息（参考数据库设计.md）
+   - 关键字段：id, planet_user_id, planet_nickname, user_number, avatar_url, joined_at, role, member_status, raw_data (JSONB), synced_at, created_at, updated_at
+   - 索引：planet_user_id, user_number, planet_nickname
 
-**系统管理表（4张）**：
-7. system_user - 系统用户
-8. system_config - 系统配置
-9. operation_log - 操作日志
-10. camp_member_relation - 训练营人员关系（教练/志愿者）
+3. **system_user** - 系统用户
+   - 关键字段：id, username, password, real_name, role, status, created_at, updated_at
+   - 索引：username
 
-**状态日志表（5张）**：
-11. camp_status_log - 训练营状态日志
-12. payment_bind_status_log - 支付绑定状态日志
-13. order_status_log - 订单状态日志
-14. refund_status_log - 退款状态日志
-15. member_status_log - 会员状态日志
-
-**通知表（1张）**：
-16. notification_message - 通知消息
-
-【关键字段要求】
-1. payment_record 表必须包含混合匹配方案字段：
-   - bind_status: pending/completed/expired/manual_required/closed
-   - bind_method: dynamic_qrcode/user_fill/smart_match/manual
-   - bind_deadline: 绑定截止时间（7天后）
-   - planet_user_id_from_attach: 从attach解析的星球用户ID
-
-2. 所有状态日志表结构统一：
-   - from_status, to_status, event, operator_id, created_at
-
-3. notification_message 表包含：
-   - recipient_type, recipient_id, message_type, channel, send_status
+4. **system_config** - 系统配置
+   - 关键字段：id, config_key, config_value, description, created_at, updated_at
+   - 索引：config_key
 
 【脚本要求】
-1. sql/init-database.sql：创建所有表、索引、触发器
-2. sql/seed-data.sql：初始数据（管理员账号、系统配置）
+1. 文件：sql/init-database-stage0.sql
+2. 包含创建表、索引、注释
+3. 插入初始数据：
+   - 默认管理员账号（admin/admin123，密码需 BCrypt 加密）
+   - 知识星球 Cookie 配置项
+
+【其他表创建计划】（不在 Stage 0 创建）：
+- Stage 1: payment_record, payment_bind_status_log, camp_status_log, operation_log
+- Stage 2: checkin_record, camp_member
+- Stage 3: refund_record, refund_status_log
+- Stage 4-6: notification_message, camp_member_relation, order_status_log, member_status_log
 
 请生成完整的 SQL 脚本，严格按照数据库设计文档的字段定义。
 ```
 
 ---
 
-#### 任务 0.3：前端项目骨架搭建（H5 会员端）
+#### 任务 0.3：H5 前端骨架搭建（最小验证）
 - **优先级**：P0
-- **预计时间**：3 小时
-- **交付物**：可运行的 Vue 3 + Vant H5 项目
+- **预计时间**：2 小时
+- **交付物**：可运行的 Vue 3 + Vant 最小骨架
 - **验收标准**：
   - ✅ `npm run dev` 启动成功
-  - ✅ 能访问首页
-  - ✅ Axios 封装包含 X-Access-Token Header
+  - ✅ 访问首页显示 "Hello Camp" 文字
+  - ✅ Axios 基础封装完成（包含 baseURL 配置）
+
+**最小骨架原则**：
+- ✅ 项目能启动，验证 Vue 3 + Vite + Vant 技术栈
+- ✅ Axios 封装（不包含 accessToken，后续添加）
+- ❌ 不包含具体页面和路由（在 Stage 1-6 按需创建）
+- ❌ 不包含状态管理（Pinia 在需要时引入）
 
 #### 🤖 AI 提示词（任务 0.3）
 
 ```markdown
-我需要创建一个 Vue 3 + Vant 的 H5 会员端项目，请帮我完成以下任务：
+我需要创建一个 Vue 3 + Vant 的 H5 会员端**最小骨架**，仅验证技术栈可行性：
 
 【项目要求】
 - 项目名称：h5-member
 - 目录位置：frontend/h5-member/
-- 技术栈：Vue 3.3+ + Vite 5.x + Vant 4.x + Pinia + Vue Router
+- 技术栈：Vue 3.3+ + Vite 5.x + Vant 4.x
+- **不需要**：完整页面、路由配置、状态管理（后续添加）
 
-【目录结构】
+【目录结构】（最小化）
 frontend/h5-member/
 ├── src/
 │   ├── main.js
-│   ├── App.vue
-│   ├── router/index.js
-│   ├── stores/
-│   │   └── user.js              # 包含 accessToken 管理
-│   ├── views/
-│   │   ├── CampList.vue         # 训练营列表
-│   │   ├── CampDetail.vue       # 训练营详情（含预填信息）
-│   │   ├── PaymentBind.vue      # 支付后绑定页面（新增）
-│   │   ├── GroupQrcode.vue      # 群二维码展示（新增）
-│   │   └── ProgressQuery.vue    # 打卡进度查询
-│   ├── utils/
-│   │   └── request.js           # Axios 封装（含 accessToken）
+│   ├── App.vue              # 只显示 "Hello Camp" 文字
+│   └── utils/
+│       └── request.js       # Axios 基础封装（不含 accessToken）
 
-【Axios 封装要求】（参考接口文档 1.3 H5 访问票据机制）
+【Axios 基础封装】（最小版本）
 ```javascript
 // utils/request.js
 import axios from 'axios'
 
 const request = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api',
   timeout: 10000
 })
 
-// 请求拦截器：添加 X-Access-Token
-request.interceptors.request.use(config => {
-  const accessToken = localStorage.getItem('accessToken')
-  if (accessToken) {
-    config.headers['X-Access-Token'] = accessToken
+// 响应拦截器：统一处理响应
+request.interceptors.response.use(
+  response => response.data,
+  error => {
+    console.error('请求失败:', error)
+    return Promise.reject(error)
   }
-  return config
-})
+)
 
-// 响应拦截器：处理 accessToken
-request.interceptors.response.use(response => {
-  // 支付成功时保存 accessToken
-  if (response.data?.data?.accessToken) {
-    localStorage.setItem('accessToken', response.data.data.accessToken)
-  }
-  return response.data
-})
+export default request
 ```
 
-【路由配置】（参考接口文档 H5 接口）
-- / → 训练营列表
-- /camp/:id → 训练营详情
-- /payment/bind → 支付后绑定（需 accessToken）
-- /payment/:orderNo/qrcode → 群二维码（需 accessToken）
-- /progress/:memberId → 打卡进度（需 accessToken）
+【配置文件】
+- package.json：Vue 3 + Vite + Vant 4
+- vite.config.js：基础配置
+- .env.development：VITE_API_BASE_URL=http://localhost:8080/api
 
-请生成完整的代码和配置文件。
+【验收标准】
+1. npm run dev 启动成功，访问 http://localhost:5173
+2. 页面显示 "Hello Camp" 文字
+3. 控制台无报错
+
+请生成完整的最小骨架代码。具体页面和路由将在后续 Stage 开发。
 ```
 
 ---
 
-#### 任务 0.4：前端项目骨架搭建（Web 管理后台）
-- **优先级**：P1
-- **预计时间**：3 小时
-- **交付物**：可运行的 Vue 3 + Element Plus 项目
-- **验收标准**：
-  - ✅ `npm run dev` 启动成功
-  - ✅ 能看到登录页和基础布局
+**任务 0.4 已移除**：Web 管理后台骨架移至 Stage 1（与管理员功能一起开发）
 
 ---
 
@@ -408,6 +397,54 @@ request.interceptors.response.use(response => {
 1. 创建训练营时自动计算 total_days
 2. 发布时生成 enroll_url
 3. 状态变更记录到日志表
+
+【接口契约要求】（参考接口文档 1.2 统一响应格式）
+1. **统一响应格式**：
+   ```json
+   {
+     "code": 200,
+     "message": "成功",
+     "data": {...},
+     "timestamp": 1234567890
+   }
+   ```
+
+2. **错误码规范**（参考接口文档 1.4）：
+   - 参数校验失败：400 + 具体字段错误信息
+   - 业务逻辑错误：自定义错误码（1001-1499）
+   - 系统内部错误：500
+
+3. **分页响应格式**：
+   ```json
+   {
+     "code": 200,
+     "data": {
+       "items": [...],
+       "total": 100,
+       "page": 1,
+       "pageSize": 20
+     }
+   }
+   ```
+
+【测试要求】
+1. **单元测试**（使用 JUnit 5 + Mockito）：
+   - Service 层核心业务逻辑必须有单元测试
+   - 测试覆盖率：分支覆盖 ≥ 80%
+   - 测试用例包含：正常流程、边界条件、异常情况
+
+2. **集成测试**（使用 Spring Boot Test）：
+   - Controller 层接口测试
+   - 验证请求参数校验
+   - 验证响应格式符合契约
+   - 验证数据库操作正确性
+
+3. **测试命令**：
+   ```bash
+   ./gradlew test                # 运行单元测试
+   ./gradlew integrationTest     # 运行集成测试
+   ./gradlew check               # 完整检查
+   ```
 
 请生成完整的代码和单元测试。
 ```
@@ -1172,7 +1209,97 @@ API 返回打卡天数，需应用宽限规则：
 
 ---
 
-### 3. 质量保障
+### 3. 接口契约和测试要求（通用规范）
+
+**所有 AI 提示词中的接口实现都必须遵循以下规范**：
+
+#### 接口契约要求
+
+1. **统一响应格式**（参考接口文档 1.2）：
+   ```json
+   {
+     "code": 200,
+     "message": "成功",
+     "data": {...},
+     "timestamp": 1234567890
+   }
+   ```
+
+2. **错误码规范**（参考接口文档 1.4）：
+   - **参数校验失败**：`400` + 具体字段错误信息
+   - **业务逻辑错误**：自定义错误码 `1001-1499`
+   - **系统内部错误**：`500`
+
+3. **分页响应格式**：
+   ```json
+   {
+     "code": 200,
+     "data": {
+       "items": [...],
+       "total": 100,
+       "page": 1,
+       "pageSize": 20
+     }
+   }
+   ```
+
+4. **参数校验**：
+   - 使用 Spring Validation 注解（`@NotNull`, `@NotBlank`, `@Valid` 等）
+   - 在 Controller 层添加 `@Validated` 注解
+   - 校验失败自动返回 400 错误
+
+#### 测试要求
+
+**后端测试**（Java + Spring Boot）：
+
+1. **单元测试**（JUnit 5 + Mockito）：
+   - Service 层核心业务逻辑必须有单元测试
+   - 测试覆盖率要求：**分支覆盖 ≥ 80%**
+   - 测试用例必须包含：
+     - ✅ 正常流程（Happy Path）
+     - ✅ 边界条件（空值、极值、临界值）
+     - ✅ 异常情况（参数错误、业务异常）
+
+2. **集成测试**（Spring Boot Test）：
+   - Controller 层接口必须有集成测试
+   - 验证内容：
+     - ✅ 请求参数校验
+     - ✅ 响应格式符合契约
+     - ✅ 数据库操作正确性
+     - ✅ 事务一致性
+
+3. **测试命令**：
+   ```bash
+   cd backend
+   ./gradlew test                # 运行单元测试
+   ./gradlew integrationTest     # 运行集成测试
+   ./gradlew check               # 完整检查（编译+测试+风格）
+   ```
+
+**前端测试**（Vue 3 + Vite）：
+
+1. **单元测试**（Vitest + Testing Library）：
+   - 工具函数必须有单元测试
+   - 复杂组件逻辑建议编写测试
+
+2. **测试命令**：
+   ```bash
+   cd frontend/h5-member (或 admin-web)
+   npm run test:unit             # 运行单元测试
+   npm run lint                  # 代码检查
+   npm run type-check            # 类型检查
+   ```
+
+#### 在 AI 提示词中的应用
+
+**示例**（已在任务 1.3 中添加）：
+- 每个包含接口实现的 AI 提示词末尾都应添加"【接口契约要求】"和"【测试要求】"部分
+- 确保 AI 生成的代码遵循统一规范
+- 提高代码质量和可维护性
+
+---
+
+### 4. 质量保障
 
 #### 代码审查清单
 
@@ -1189,6 +1316,74 @@ API 返回打卡天数，需应用宽限规则：
 1. **单元测试**：核心业务逻辑必须有单元测试
 2. **集成测试**：每个接口都要用 Postman 测试
 3. **端到端测试**：每个 Stage 结束后运行完整流程测试
+
+#### 验收命令（前后端分离）
+
+**完整验收命令详见**：《技术方案.md》A.1 节"验收命令"
+
+##### 后端验收（backend/）
+
+```bash
+cd backend
+
+# 完整检查（编译+测试+风格）
+./gradlew check
+
+# 或分步执行
+./gradlew compileJava      # 编译
+./gradlew test             # 单元测试
+./gradlew integrationTest  # 集成测试
+./gradlew spotlessCheck    # 代码风格检查
+```
+
+##### 前端验收
+
+**H5 会员端**（frontend/h5-member/）：
+
+```bash
+cd frontend/h5-member
+
+# 完整检查
+npm run lint && npm run type-check && npm run test:unit
+
+# 或分步执行
+npm run lint          # 代码检查
+npm run type-check    # 类型检查
+npm run test:unit     # 单元测试
+npm run build         # 构建验证
+```
+
+**Web 管理后台**（frontend/admin-web/）：
+
+```bash
+cd frontend/admin-web
+
+# 完整检查
+npm run lint && npm run type-check && npm run test:unit
+
+# 构建验证
+npm run build
+```
+
+##### 完整项目验收（推荐）
+
+```bash
+# 项目根目录执行
+./scripts/verify-all.sh
+
+# 脚本内容（自动验收后端+H5+管理后台）
+# 详见《技术方案.md》A.1 节
+```
+
+##### 各 Stage 验收要求
+
+| Stage | 后端验收 | H5 验收 | 管理后台验收 |
+|-------|---------|---------|-------------|
+| Stage 0 | ✅ 必须 | ✅ 必须（仅骨架） | ❌ 不需要 |
+| Stage 1 | ✅ 必须 | ✅ 必须（仅骨架） | ✅ 必须 |
+| Stage 2 | ✅ 必须 | ✅ 必须（支付页面） | ✅ 必须 |
+| Stage 3-5 | ✅ 必须 | ✅ 必须 | ✅ 必须 |
+| Stage 6 | ✅ 必须 | ✅ 必须（完整） | ✅ 必须（完整） |
 
 ---
 

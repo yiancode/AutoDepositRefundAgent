@@ -1,0 +1,150 @@
+{
+  "id": "checkpoint-20251204-v1-docs",
+  "created_at": "2025-12-04T00:00:00+08:00",
+  "description": "v1 版本文档重构 - 用户体系与支付绑定状态机优化",
+  "version": "v1",
+  "phase": "文档设计",
+  "progress": "60%",
+
+  "key_decisions": {
+    "three_table_architecture": {
+      "description": "三表用户体系设计",
+      "tables": {
+        "system_user": "系统管理员，管理后台登录",
+        "wechat_user": "微信OAuth用户，H5端登录桥接",
+        "planet_user": "星球会员，仅通过Excel离线导入（非API同步）"
+      }
+    },
+    "dual_payment_paths": {
+      "description": "两条互斥的支付路径",
+      "h5_main_path": "H5主路径: OAuth登录 → 绑定星球账号 → 支付押金",
+      "fallback_path": "降级路径: 固定收款码支付 → 用户填写信息 → 人工审核"
+    },
+    "bind_method_values": {
+      "description": "有效的绑定方式（已移除 smart_match 和 dynamic_qrcode）",
+      "values": ["h5_bindplanet", "user_fill", "manual"]
+    },
+    "bind_status_values": {
+      "description": "绑定状态（MANUAL_REQUIRED 已更名为 MANUAL_REVIEW）",
+      "values": ["pending", "completed", "expired", "manual_review", "closed"]
+    },
+    "removed_features": [
+      "智能匹配 (smart_match) - 因数据来源不支持而废弃",
+      "动态二维码 (dynamic_qrcode) - 简化方案不再需要"
+    ]
+  },
+
+  "completed_tasks": [
+    {
+      "task": "重新设计 planet_user 表（基于 Excel 导入）",
+      "details": "planet_user 数据来源明确为 Excel 离线导入，而非 API 同步"
+    },
+    {
+      "task": "明确 wechat_user + system_user + planet_user 三表关系",
+      "details": "三表职责清晰分离，wechat_user 作为 OAuth 桥接"
+    },
+    {
+      "task": "新增会员导入功能设计",
+      "details": "支持 Excel 批量导入星球会员"
+    }
+  ],
+
+  "pending_tasks": [
+    {
+      "id": 1,
+      "task": "重新设计支付绑定状态机（移除智能匹配）",
+      "status": "in_progress",
+      "priority": "high",
+      "details": {
+        "file": "docs/v1/diagrams/时序图.md",
+        "sections_to_modify": [
+          "Section 3.2 '智能匹配详细时序' - 需要完全删除",
+          "Section 3.3 '匹配结果分类处理' - 需要简化，移除智能匹配相关内容"
+        ],
+        "reasoning": "智能匹配依赖 API 实时同步 planet_user，但实际数据来源是 Excel 导入"
+      }
+    },
+    {
+      "id": 2,
+      "task": "移除废弃的动态二维码路径内容",
+      "status": "pending",
+      "priority": "medium",
+      "details": {
+        "files": [
+          "docs/v1/技术方案.md",
+          "docs/v1/diagrams/时序图.md"
+        ],
+        "action": "删除所有 dynamic_qrcode 相关的描述和流程"
+      }
+    },
+    {
+      "id": 3,
+      "task": "迁移 FastAuth 有效内容到技术方案",
+      "status": "pending",
+      "priority": "medium",
+      "details": {
+        "source": "docs/v1/FastAuth接入方案.md",
+        "target": "docs/v1/技术方案.md",
+        "action": "将 OAuth 配置、回调处理等有效内容整合到主技术方案"
+      }
+    },
+    {
+      "id": 4,
+      "task": "补充前端路由设计",
+      "status": "pending",
+      "priority": "low",
+      "details": {
+        "target": "docs/v1/技术方案.md",
+        "scope": ["H5会员端路由", "管理后台路由", "路由守卫设计"]
+      }
+    },
+    {
+      "id": 5,
+      "task": "补充错误码定义",
+      "status": "pending",
+      "priority": "low",
+      "details": {
+        "target": "docs/v1/技术方案.md",
+        "scope": ["业务错误码", "系统错误码", "第三方对接错误码"]
+      }
+    },
+    {
+      "id": 6,
+      "task": "补充 returnUrl 白名单配置",
+      "status": "pending",
+      "priority": "low",
+      "details": {
+        "target": "docs/v1/技术方案.md",
+        "scope": ["白名单配置格式", "安全校验逻辑"]
+      }
+    }
+  ],
+
+  "files_modified_in_session": [
+    "docs/v1/diagrams/状态机.md - 更新支付绑定状态机定义",
+    "docs/v1/数据库设计.md - 更新 planet_user 表结构",
+    "docs/v1/技术方案.md - 调整用户体系描述"
+  ],
+
+  "files_need_modification": [
+    {
+      "file": "docs/v1/diagrams/时序图.md",
+      "sections": ["3.2 智能匹配详细时序 (删除)", "3.3 匹配结果分类处理 (简化)"]
+    },
+    {
+      "file": "docs/v1/技术方案.md",
+      "sections": ["移除 dynamic_qrcode", "整合 FastAuth", "补充前端路由", "补充错误码"]
+    }
+  ],
+
+  "context_for_resume": {
+    "current_focus": "正在修改 时序图.md，移除智能匹配相关内容",
+    "design_principles": [
+      "H5主路径和降级路径互斥，不能同时走",
+      "planet_user 仅来自 Excel 导入，无 API 同步",
+      "bind_method 只有 h5_bindplanet、user_fill、manual 三种",
+      "MANUAL_REQUIRED 统一更名为 MANUAL_REVIEW"
+    ],
+    "resume_instruction": "继续修改 docs/v1/diagrams/时序图.md 的 Section 3，删除智能匹配相关内容"
+  }
+}

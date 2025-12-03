@@ -52,7 +52,8 @@
       "Bash(wc:*)",
       "mcp__filesystem__list_directory",
       "mcp__filesystem__read_text_file",
-      "mcp__filesystem__read_multiple_files"
+      "mcp__filesystem__read_multiple_files",
+      "Bash(git show:*)"
     ],
     "deny": [],
     "ask": []

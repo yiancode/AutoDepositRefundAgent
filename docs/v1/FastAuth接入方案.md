@@ -72,69 +72,74 @@ COMMENT ON TABLE planet_user IS '知识星球用户/会员表';
 
 #### 2.3.2 新增同步日志表
 
+同步日志与数据库设计保持一致，统一字段含义，便于会员同步、打卡同步复用。
+
 ```sql
--- 同步日志表（新增，PostgreSQL 语法）
 CREATE TABLE sync_log (
     id BIGSERIAL PRIMARY KEY,
 
-    -- 同步目标
-    sync_target VARCHAR(50) NOT NULL,
-    planet_id VARCHAR(50),
-    camp_id BIGINT,
+    -- 同步任务信息
+    sync_type VARCHAR(50) NOT NULL,
+    sync_source VARCHAR(50) NOT NULL DEFAULT 'planet_api',
 
-    -- 同步类型和范围
-    sync_type VARCHAR(20) NOT NULL,
+    -- 同步范围
+    camp_id BIGINT,
+    planet_group_id VARCHAR(50),
 
     -- 同步统计
     total_count INTEGER DEFAULT 0,
     success_count INTEGER DEFAULT 0,
     failed_count INTEGER DEFAULT 0,
-    new_count INTEGER DEFAULT 0,
-    update_count INTEGER DEFAULT 0,
+    skipped_count INTEGER DEFAULT 0,
 
-    -- 执行状态
-    status VARCHAR(20) NOT NULL DEFAULT 'running',
-    error_message TEXT,
-    error_detail JSONB,
-
-    -- 时间信息
-    started_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    -- 执行信息
+    started_at TIMESTAMP NOT NULL,
     finished_at TIMESTAMP,
     duration_ms INTEGER,
 
-    -- 触发信息
-    trigger_type VARCHAR(20) NOT NULL DEFAULT 'scheduled',
-    trigger_user_id BIGINT,
+    -- 状态
+    status VARCHAR(20) NOT NULL DEFAULT 'running',
 
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    -- 错误信息
+    error_message TEXT,
+    error_details JSONB,
+
+    -- 同步结果明细（可选）
+    sync_details JSONB,
+
+    -- 触发信息
+    triggered_by VARCHAR(50) NOT NULL DEFAULT 'scheduler',
+    operator_id BIGINT,
+
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_sl_camp FOREIGN KEY (camp_id) REFERENCES training_camp(id),
+    CONSTRAINT fk_sl_operator FOREIGN KEY (operator_id) REFERENCES system_user(id)
 );
 
--- 索引
-CREATE INDEX idx_sync_log_target ON sync_log(sync_target);
-CREATE INDEX idx_sync_log_status ON sync_log(status);
-CREATE INDEX idx_sync_log_started ON sync_log(started_at DESC);
-CREATE INDEX idx_sync_log_planet ON sync_log(planet_id) WHERE planet_id IS NOT NULL;
-CREATE INDEX idx_sync_log_camp ON sync_log(camp_id) WHERE camp_id IS NOT NULL;
+CREATE INDEX idx_sl_type ON sync_log(sync_type);
+CREATE INDEX idx_sl_camp ON sync_log(camp_id);
+CREATE INDEX idx_sl_status ON sync_log(status);
+CREATE INDEX idx_sl_time ON sync_log(started_at);
 
--- 字段注释（PostgreSQL 语法）
-COMMENT ON TABLE sync_log IS '数据同步日志表';
-COMMENT ON COLUMN sync_log.sync_target IS '同步目标: member/checkin';
-COMMENT ON COLUMN sync_log.planet_id IS '星球ID（可选，为空表示全局同步）';
-COMMENT ON COLUMN sync_log.camp_id IS '训练营ID（可选，打卡同步时使用）';
-COMMENT ON COLUMN sync_log.sync_type IS '同步类型: full-全量/incremental-增量';
+COMMENT ON TABLE sync_log IS '会员同步日志表（FastAuth 相关）';
+COMMENT ON COLUMN sync_log.sync_type IS '同步类型: member_full/member_incremental/checkin';
+COMMENT ON COLUMN sync_log.sync_source IS '同步来源: planet_api/manual';
+COMMENT ON COLUMN sync_log.camp_id IS '关联训练营ID（可选）';
+COMMENT ON COLUMN sync_log.planet_group_id IS '知识星球圈子ID';
 COMMENT ON COLUMN sync_log.total_count IS '总处理数量';
 COMMENT ON COLUMN sync_log.success_count IS '成功数量';
 COMMENT ON COLUMN sync_log.failed_count IS '失败数量';
-COMMENT ON COLUMN sync_log.new_count IS '新增数量';
-COMMENT ON COLUMN sync_log.update_count IS '更新数量';
-COMMENT ON COLUMN sync_log.status IS '状态: running-执行中/success-成功/failed-失败/partial-部分成功';
-COMMENT ON COLUMN sync_log.error_message IS '错误信息';
-COMMENT ON COLUMN sync_log.error_detail IS '错误详情（批量时记录每条失败原因）';
+COMMENT ON COLUMN sync_log.skipped_count IS '跳过数量';
 COMMENT ON COLUMN sync_log.started_at IS '开始时间';
 COMMENT ON COLUMN sync_log.finished_at IS '结束时间';
 COMMENT ON COLUMN sync_log.duration_ms IS '执行耗时（毫秒）';
-COMMENT ON COLUMN sync_log.trigger_type IS '触发类型: scheduled-定时/manual-手动';
-COMMENT ON COLUMN sync_log.trigger_user_id IS '手动触发时的操作人ID';
+COMMENT ON COLUMN sync_log.status IS '状态: running/success/failed/partial';
+COMMENT ON COLUMN sync_log.error_message IS '错误信息';
+COMMENT ON COLUMN sync_log.error_details IS '错误详情（JSON格式）';
+COMMENT ON COLUMN sync_log.sync_details IS '同步结果明细（JSON格式）';
+COMMENT ON COLUMN sync_log.triggered_by IS '触发方式: scheduler/manual/webhook';
+COMMENT ON COLUMN sync_log.operator_id IS '操作人ID（手动触发时）';
 ```
 
 ### 2.4 Manager 层扩展
@@ -1326,6 +1331,21 @@ public class RedisAuthStateCache implements AuthStateCache {
 }
 ```
 
+#### 3.4.2.5 认证配置属性类
+
+```java
+@Data
+@Component
+@ConfigurationProperties(prefix = "app.auth")
+public class AuthProperties {
+    /**
+     * returnUrl 白名单（防止开放重定向攻击）
+     * 支持精确匹配和通配符（*.example.com）
+     */
+    private List<String> allowedReturnUrls = new ArrayList<>();
+}
+```
+
 #### 3.4.3 认证控制器
 
 ```java
@@ -1339,9 +1359,11 @@ public class AuthController {
     private final JwtTokenProvider jwtTokenProvider;
     private final MemberVerifyService memberVerifyService;
     private final RedisTemplate<String, String> redisTemplate;
+    private final AuthProperties authProperties;
 
-    @Value("${app.auth.allowed-return-urls}")
-    private List<String> allowedReturnUrls;
+    // 注意：@Value 无法直接映射 YAML List，需要使用 @ConfigurationProperties
+    // 备选方案：@Value("#{'${app.auth.allowed-return-urls}'.split(',')}")
+    //         但需要配置文件改成逗号分隔字符串
 
     private static final String RETURN_URL_PREFIX = "auth:return_url:";
     private static final long RETURN_URL_TIMEOUT = 5 * 60 * 1000; // 5分钟
@@ -1463,6 +1485,7 @@ public class AuthController {
      * 验证 returnUrl 是否在白名单内
      */
     private boolean isAllowedReturnUrl(String returnUrl) {
+        List<String> allowedReturnUrls = authProperties.getAllowedReturnUrls();
         if (allowedReturnUrls == null || allowedReturnUrls.isEmpty()) {
             return false;
         }
@@ -1804,7 +1827,7 @@ onMounted(async () => {
 │  5. 显示退款名单，管理员审核                                         │
 │         │                                                            │
 │         ▼                                                            │
-│  6. 确认后，调用企业微信退款 API                                     │
+│  6. 确认后，调用微信支付退款 API                                     │
 │         │                                                            │
 │         ▼                                                            │
 │  7. 退款成功，通知会员                                               │

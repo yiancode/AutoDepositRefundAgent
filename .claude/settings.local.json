@@ -61,7 +61,9 @@
       "Bash(./scripts/create-optimization-issues.sh:*)",
       "Bash(gh milestone create:*)",
       "Bash(./scripts/create-optimization-issues-simple.sh:*)",
-      "Bash(gh issue list:*)"
+      "Bash(gh issue list:*)",
+      "Bash(grep:*)",
+      "Bash(ls:*)"
     ],
     "deny": [],
     "ask": []

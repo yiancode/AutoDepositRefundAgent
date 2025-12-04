@@ -64,7 +64,8 @@
       "Bash(gh issue list:*)",
       "Bash(grep:*)",
       "Bash(ls:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(git mv:*)"
     ],
     "deny": [],
     "ask": []

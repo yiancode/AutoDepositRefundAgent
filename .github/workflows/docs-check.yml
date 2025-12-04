@@ -1,0 +1,134 @@
+# 文档质量检查工作流
+# 功能：检查 Markdown 文档中的死链接和格式问题
+
+name: Docs Check
+
+on:
+  push:
+    paths:
+      - 'docs/**/*.md'
+      - '*.md'
+  pull_request:
+    paths:
+      - 'docs/**/*.md'
+      - '*.md'
+  # 允许手动触发
+  workflow_dispatch:
+
+jobs:
+  check-links:
+    name: Check Markdown Links
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install markdown-link-check
+        run: npm install -g markdown-link-check
+
+      - name: Create link check config
+        run: |
+          cat > .mlc-config.json << 'EOF'
+          {
+            "ignorePatterns": [
+              {
+                "pattern": "^http://localhost"
+              },
+              {
+                "pattern": "^https://test-api.example.com"
+              },
+              {
+                "pattern": "^https://api.example.com"
+              },
+              {
+                "pattern": "^https://h5.example.com"
+              },
+              {
+                "pattern": "^https://admin.example.com"
+              },
+              {
+                "pattern": "^https://cdn.example.com"
+              },
+              {
+                "pattern": "^https://pay.weixin.qq.com"
+              },
+              {
+                "pattern": "^https://open.weixin.qq.com"
+              },
+              {
+                "pattern": "^https://images.zsxq.com"
+              }
+            ],
+            "timeout": "10s",
+            "retryOn429": true,
+            "retryCount": 3,
+            "fallbackRetryDelay": "5s",
+            "aliveStatusCodes": [200, 206, 301, 302, 307, 308]
+          }
+          EOF
+
+      - name: Check links in docs/v1
+        run: |
+          echo "Checking links in docs/v1..."
+          find docs/v1 -name "*.md" -print0 | while IFS= read -r -d '' file; do
+            echo "Checking: $file"
+            markdown-link-check "$file" --config .mlc-config.json || true
+          done
+
+      - name: Check links in root markdown files
+        run: |
+          echo "Checking root markdown files..."
+          for file in *.md; do
+            if [ -f "$file" ]; then
+              echo "Checking: $file"
+              markdown-link-check "$file" --config .mlc-config.json || true
+            fi
+          done
+
+  lint-markdown:
+    name: Lint Markdown Files
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install markdownlint-cli
+        run: npm install -g markdownlint-cli
+
+      - name: Create markdownlint config
+        run: |
+          cat > .markdownlint.json << 'EOF'
+          {
+            "default": true,
+            "MD013": false,
+            "MD033": false,
+            "MD041": false,
+            "MD024": {
+              "siblings_only": true
+            },
+            "MD036": false,
+            "MD040": false
+          }
+          EOF
+
+      - name: Lint docs/v1
+        run: |
+          echo "Linting docs/v1..."
+          markdownlint 'docs/v1/**/*.md' --config .markdownlint.json || true
+
+      - name: Lint root markdown files
+        run: |
+          echo "Linting root markdown files..."
+          markdownlint '*.md' --config .markdownlint.json || true

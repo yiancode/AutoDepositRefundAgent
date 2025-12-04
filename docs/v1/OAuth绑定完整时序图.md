@@ -337,7 +337,7 @@ public void processExpiredBindings() {
         // 更新Redis accessToken
         updateAccessTokenStatus(record.getOrderNo(), "expired");
 
-        // 加入智能匹配队列（后续Stage 4实现）
+        // 加入智能匹配队列（后续Stage 3实现）
         addToMatchQueue(record);
     }
 }
@@ -483,7 +483,6 @@ CREATE UNIQUE INDEX uk_binding_wechat_planet ON user_planet_binding(wechat_user_
 - [技术方案 - 5.3 支付与绑定混合方案](./技术方案.md)
 - [接口文档 - 第2章 OAuth授权](./接口文档.md)
 - [数据库设计 - payment_record表](./数据库设计.md)
-- [设计优化决策文档 - P0-2, P1-4](./设计优化决策文档.md)
 
 ---
 

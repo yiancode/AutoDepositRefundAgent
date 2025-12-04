@@ -63,7 +63,8 @@
       "Bash(./scripts/create-optimization-issues-simple.sh:*)",
       "Bash(gh issue list:*)",
       "Bash(grep:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(rm:*)"
     ],
     "deny": [],
     "ask": []

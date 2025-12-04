@@ -53,7 +53,15 @@
       "mcp__filesystem__list_directory",
       "mcp__filesystem__read_text_file",
       "mcp__filesystem__read_multiple_files",
-      "Bash(git show:*)"
+      "Bash(git show:*)",
+      "Bash(gh --version:*)",
+      "Bash(brew install:*)",
+      "Bash(gh auth status:*)",
+      "Bash(gh auth login:*)",
+      "Bash(./scripts/create-optimization-issues.sh:*)",
+      "Bash(gh milestone create:*)",
+      "Bash(./scripts/create-optimization-issues-simple.sh:*)",
+      "Bash(gh issue list:*)"
     ],
     "deny": [],
     "ask": []

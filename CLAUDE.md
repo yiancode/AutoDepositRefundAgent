@@ -57,9 +57,24 @@ PostgreSQL + Redis + 腾讯云COS
 
 ## 常用命令
 
+### v0 后端 (zsxq-api/) - 已废弃,仅供参考
+
+```bash
+cd zsxq-api
+npm install                   # 安装依赖
+npm run dev                   # 开发模式 (nodemon)
+npm start                     # 生产模式
+npm test                      # 运行测试 (Jest)
+npm run lint                  # 代码检查
+npm run format                # 代码格式化
+```
+
+**注意**: v0 使用 Node.js + Express + Jest,v1 将改用 Java + Spring Boot
+
 ### v1 后端 (backend/) - 待创建
 
 ```bash
+cd backend
 ./gradlew bootRun                              # 启动 http://localhost:8080
 ./gradlew test                                 # 运行所有测试
 ./gradlew test --tests "*.CampServiceTest"    # 运行单个测试类
@@ -69,13 +84,14 @@ PostgreSQL + Redis + 腾讯云COS
 ### v1 前端 (frontend/) - 待创建
 
 ```bash
-cd frontend/h5-member && npm run dev    # H5会员端
-cd frontend/admin-web && npm run dev    # Web管理后台
+cd frontend/h5-member && npm run dev    # H5会员端 http://localhost:5173
+cd frontend/admin-web && npm run dev    # Web管理后台 http://localhost:5174
 ```
 
 ### API 文档
 
-启动后端后访问: `http://localhost:8080/doc.html` (Knife4j)
+- **v0**: `http://localhost:3000/api-docs` (Swagger UI) - 已废弃
+- **v1**: `http://localhost:8080/doc.html` (Knife4j) - 待创建
 
 ## 环境变量
 
@@ -149,7 +165,7 @@ com.yourcompany.camp/
 - **Service**: `CampService` (接口) + `CampServiceImpl` (实现)
 - **Controller**: `CampController`
 - **Mapper**: `CampMapper`
-- **测试**: `*Test.java` (JUnit 5 + Mockito)
+- **测试**: `*Test.java` (JUnit 5 + Mockito 或 TestNG + Mockito,具体遵循全局配置)
 
 ### 代码风格
 
@@ -189,8 +205,11 @@ com.yourcompany.camp/
 
 ## 注意事项
 
-1. **知识星球凭证会过期** - 定期从浏览器 DevTools 更新
-2. **PostgreSQL 15+** - 必须支持 JSONB 类型
-3. **提交前检查**:
-   - Java: `./gradlew test && ./gradlew build`
-   - 前端: `npm run lint && npm run test`
+1. **知识星球凭证会过期** - 定期从浏览器 DevTools 更新环境变量
+2. **PostgreSQL 15+** - v1 必须支持 JSONB 类型
+3. **v0 vs v1 代码隔离** - 绝不混用,v0 仅供学习参考
+4. **提交前检查**:
+   - v1 Java: `./gradlew test && ./gradlew build`
+   - v1 前端: `npm run lint && npm run test`
+   - v0 (参考): `cd zsxq-api && npm test`
+5. **测试框架** - v1 使用 JUnit 5 + Mockito 或 TestNG + Mockito (遵循全局 ~/.claude/CLAUDE.md 配置)

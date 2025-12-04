@@ -605,7 +605,7 @@ CREATE INDEX idx_auth_session_state ON auth_session(state);
 ## Stage 2：支付集成（混合方案）（5天）
 
 ### 🎯 目标
-完成微信支付集成，实现动态二维码 + 支付后绑定混合方案（对应技术方案 Stage 2）
+完成微信支付集成，实现OAuth绑定 + 支付后绑定混合方案（对应技术方案 Stage 2）
 
 ### 📦 任务拆分
 
@@ -626,14 +626,14 @@ CREATE INDEX idx_auth_session_state ON auth_session(state);
 
 1. createOrder(orderNo, amount, description, attach) → 返回支付参数
    - attach 参数格式：{"campId":1,"planetUserId":"123456789","orderNo":"ord_xxx"}
-   - 用于动态二维码支付时传递用户信息
+   - 用于OAuth绑定支付时传递用户信息
 
 2. queryOrder(orderNo) → 查询支付状态
 
 3. refund(orderNo, refundAmount) → 发起退款
 
 【attach 字段说明】（参考技术方案 5.3.1）
-- 动态二维码支付：attach 包含 planet_user_id
+- OAuth绑定支付：attach 包含 planet_user_id
 - 固定二维码支付：attach 为空
 
 【配置读取】
@@ -650,7 +650,7 @@ CREATE INDEX idx_auth_session_state ON auth_session(state);
 - **交付物**：POST /api/h5/payments 接口
 - **验收标准**：
   - ✅ 生成 UUID 格式订单号（ord_xxx）
-  - ✅ 支持传入 planetUserId（动态二维码场景）
+  - ✅ 支持传入 planetUserId（OAuth绑定场景）
 
 #### 🤖 AI 提示词（任务 2.2）
 
@@ -662,15 +662,15 @@ CREATE INDEX idx_auth_session_state ON auth_session(state);
 【请求体】
 {
   "campId": 1,
-  "planetUserId": "123456789",     // 动态二维码场景必传
-  "planetNickname": "小明同学",     // 动态二维码场景必传
+  "planetUserId": "123456789",     // OAuth绑定场景必传
+  "planetNickname": "小明同学",     // OAuth绑定场景必传
   "wechatNickname": "小明"          // 可选
 }
 
 【业务逻辑】（参考技术方案 5.2.2）
 1. 生成唯一订单号：ord_ + UUID（防止枚举攻击）
 2. 判断支付入口：
-   - 有 planetUserId → 动态二维码流程，attach 携带用户信息
+   - 有 planetUserId → OAuth绑定流程，attach 携带用户信息
    - 无 planetUserId → 固定二维码流程，attach 为空
 
 3. 创建 payment_record：
@@ -725,7 +725,7 @@ CREATE INDEX idx_auth_session_state ON auth_session(state);
 ```
 
 3. 解析 attach 字段：
-   - 有 attach（动态二维码）：
+   - 有 attach（OAuth绑定）：
      - 提取 camp_id, planet_user_id, order_no
      - 更新 payment_record：bind_status=completed, bind_method=dynamic_qrcode
      - 创建/更新 camp_member 记录
@@ -1451,7 +1451,7 @@ graph LR
 这份 AI 辅助敏捷开发计划的核心特点：
 
 1. **严格对齐技术文档**：6 个 Stage 完全对应技术方案的分阶段验证计划
-2. **完整覆盖混合匹配方案**：动态二维码 + 支付后绑定 + 智能匹配
+2. **完整覆盖混合匹配方案**：OAuth绑定 + 支付后绑定 + 智能匹配
 3. **包含 H5 安全机制**：accessToken 票据验证
 4. **状态日志完整**：5 张状态日志表全部实现
 5. **通知系统完善**：notification_message 表 + 定时任务

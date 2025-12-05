@@ -51,7 +51,7 @@ PostgreSQL + Redis + 腾讯云COS
 
 ### 数据库设计
 
-16张表，详见 `docs/v1/数据库设计.md`:
+16张表，详见 `docs/v1/design/数据库设计.md`:
 - 核心业务表: `training_camp`, `camp_member`, `payment_record`, `refund_record`
 - 状态日志表: 5张 `*_status_log` 表记录关键变更
 
@@ -118,13 +118,31 @@ WECHAT_PAY_API_KEY=your_api_key
 
 ## 关键文档
 
+> **📁 完整文档索引** → 详见 [docs/v1/README.md](docs/v1/README.md)
+
+| 文档 | 路径 | 说明 |
+|------|------|------|
+| 产品需求文档 | `docs/PRD.md` | 业务需求定义 |
+| **技术方案** | `docs/v1/design/技术方案.md` | 系统整体设计（~2300行） |
+| 数据库设计 | `docs/v1/design/数据库设计.md` | 16张表 + 索引优化 |
+| 接口文档 | `docs/v1/api/接口文档.md` | RESTful API 定义 |
+| 开发计划 | `docs/v1/guides/AI辅助敏捷开发计划.md` | Stage 划分 + AI 提示词 |
+
+### 图表文档（独立拆分）
+
+| 文档 | 路径 | 说明 |
+|------|------|------|
+| 用户旅程图 | `docs/v1/diagrams/用户旅程图.md` | UI 原型、情绪曲线 |
+| 业务流程图 | `docs/v1/diagrams/业务流程图.md` | 报名/退款/同步流程 |
+| 时序图 | `docs/v1/diagrams/时序图.md` | 支付/绑定/退款时序 |
+| 状态机 | `docs/v1/diagrams/状态机.md` | 训练营/订单/退款状态 |
+
+### 安全方案
+
 | 文档 | 路径 |
 |------|------|
-| 产品需求文档 | `docs/PRD.md` |
-| 技术方案 | `docs/v1/技术方案.md` |
-| 数据库设计 | `docs/v1/数据库设计.md` |
-| 接口文档 | `docs/v1/接口文档.md` |
-| 开发计划 | `docs/v1/AI辅助敏捷开发计划.md` |
+| OAuth 接入方案 | `docs/v1/security/FastAuth接入方案.md` |
+| 支付安全增强 | `docs/v1/security/支付安全增强方案.md` |
 
 ## 代码规范
 

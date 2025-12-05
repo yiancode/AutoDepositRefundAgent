@@ -104,9 +104,9 @@ sum(bind_status{status="completed", created_within="7d"}) / sum(payment_status{s
 
 | 指标 | 目标值 | 告警阈值 | 计算公式 |
 |------|--------|---------|---------|
-| **自动匹配成功率** | >80% | <70% | `(bind_method IN ('user_fill','smart_match')) / 总订单` |
+| **自动绑定成功率** | >80% | <70% | `(bind_method='h5_bindplanet') / 总订单` |
+| **用户手动绑定占比** | <20% | >30% | `(bind_method='user_fill') / 总订单` |
 | **人工审核占比** | <15% | >20% | `(bind_status='manual_review') / 总订单` |
-| 匹配置信度平均值 | >85% | <75% | `AVG(match_confidence WHERE bind_method='smart_match')` |
 
 ### 打卡同步
 

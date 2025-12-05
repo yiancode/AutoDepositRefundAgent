@@ -609,7 +609,6 @@ choco install redis-64
 |----------|----------|------|
 | `refund.execute` | `camp.topic` | 退款执行任务 |
 | `refund.retry` | `camp.topic` | 退款重试（延迟队列） |
-| `match.smart` | `camp.topic` | 智能匹配任务 |
 | `notify.send` | `camp.topic` | 通知发送任务 |
 | `stats.update` | `camp.topic` | 统计更新任务 |
 
@@ -1506,11 +1505,11 @@ zsxq:
 
 ---
 
-### Stage 4：混合匹配算法（3天）
+### Stage 4：混合绑定验证（3天）
 
-- bind_status 优先匹配
-- 智能匹配算法（Levenshtein）
-- 手动匹配接口
+- bind_status 状态验证
+- 人工审核流程
+- 手动绑定接口
 
 ---
 

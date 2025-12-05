@@ -19,7 +19,7 @@
 构建一套自动化系统，实现：
 1. **自动化支付流程**：会员支付押金后立即获得入群二维码
 2. **自动化数据同步**：每日自动同步知识星球打卡数据
-3. **智能匹配识别**：自动匹配支付记录与打卡数据
+3. **身份绑定验证**：支付记录与星球账号绑定，支持用户主动绑定和人工审核
 4. **半自动退款**：系统判断 + 人工审核 + 自动退款
 5. **数据统计分析**：训练营运营数据可视化
 
@@ -855,11 +855,11 @@ for each 合格用户:
    - X-Access-Token 验证
 4. 绑定超时定时任务
    - 检查 bind_status=pending 且超时的记录
-   - 更新为 expired，加入智能匹配队列
+   - 更新为 expired，转入人工审核流程（manual_review）
 
 **验收标准**：
-- 动态二维码支付：bind_status=completed, bind_method=dynamic_qrcode
-- 固定二维码支付：bind_status=pending, bind_deadline=7天后
+- H5 OAuth绑定（动态二维码）：bind_status=completed, bind_method=h5_bindplanet
+- 降级路径（固定二维码）：bind_status=pending, bind_deadline=7天后
 - 用户绑定成功后返回群二维码
 
 ---

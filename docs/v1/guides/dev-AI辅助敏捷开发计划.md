@@ -509,7 +509,7 @@ export default request
 #### 🤖 AI 提示词（任务 1.5）
 
 ```markdown
-我需要实现微信公众号 OAuth 2.0 授权集成，请严格按照《接口文档.md》第二章和《FastAuth接入方案.md》实现：
+我需要实现微信公众号 OAuth 2.0 授权集成，请严格按照《接口文档.md》第二章和《OAuth安全指南.md》实现：
 
 【接口清单】（参考接口文档 2.1-2.3）
 1. GET /api/auth/authorize?planetUserId={planetUserId}&redirectUrl={url}
@@ -566,7 +566,7 @@ CREATE INDEX idx_auth_session_planet_user ON auth_session(planet_user_id);
 CREATE INDEX idx_auth_session_state ON auth_session(state);
 ```
 
-【OAuth 授权流程】（参考 FastAuth接入方案.md）
+【OAuth 授权流程】（参考 OAuth安全指南.md）
 
 1. 用户点击授权链接 → GET /api/auth/authorize?planetUserId=xxx&redirectUrl=xxx
 2. 后端生成 state 参数：UUID.randomUUID().toString()
@@ -680,7 +680,7 @@ CREATE INDEX idx_auth_session_state ON auth_session(state);
 
 3. 创建 payment_record：
    - bind_status = pending（无 attach）或 completed（有 attach）
-   - bind_method = dynamic_qrcode（有 attach）或 null
+   - bind_method = h5_bindplanet（有 attach）或 null
    - bind_deadline = now + 7 days（无 attach 时设置）
 
 4. 调用 WechatPayManager.createOrder()
@@ -732,7 +732,7 @@ CREATE INDEX idx_auth_session_state ON auth_session(state);
 3. 解析 attach 字段：
    - 有 attach（OAuth绑定）：
      - 提取 camp_id, planet_user_id, order_no
-     - 更新 payment_record：bind_status=completed, bind_method=dynamic_qrcode
+     - 更新 payment_record：bind_status=completed, bind_method=h5_bindplanet
      - 创建/更新 camp_member 记录
      - 生成 accessToken 并存入 Redis
 
@@ -825,7 +825,7 @@ redisTemplate.opsForValue().set(
 - **交付物**：BindExpireTask（每日 02:00 执行）
 - **验收标准**：
   - ✅ 检查 bind_status=pending 且超时的记录
-  - ✅ 更新为 expired，加入智能匹配队列
+  - ✅ 更新为 expired，转入人工审核流程（manual_review）
 
 ---
 

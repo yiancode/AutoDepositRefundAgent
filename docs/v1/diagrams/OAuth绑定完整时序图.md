@@ -1,5 +1,8 @@
 # OAuth 授权与支付绑定完整时序图
 
+> **文档版本**: v1.1
+> **最后更新**: 2025-12-06
+> **SSOT引用**: [状态枚举定义.md](../design/状态枚举定义.md) - 时序中涉及的 bind_status、bind_method、accessToken 状态值
 > **文档目的**：详细描述从 OAuth 授权到支付、绑定星球账号的完整流程
 > **对应决策**：[优化完成总结](../archive/优化完成总结.md) P0-2（FastAuth 会员验证流程断层）和 P1-4（OAuth 绑定时序明确化）
 
@@ -337,8 +340,8 @@ public void processExpiredBindings() {
         // 更新Redis accessToken
         updateAccessTokenStatus(record.getOrderNo(), "expired");
 
-        // 加入智能匹配队列（后续Stage 3实现）
-        addToMatchQueue(record);
+        // 转入人工审核流程（bind_status: expired → manual_review）
+        addToManualReviewQueue(record);
     }
 }
 ```
@@ -479,13 +482,16 @@ CREATE UNIQUE INDEX uk_binding_wechat_planet ON user_planet_binding(wechat_user_
 
 ## 相关文档
 
-- [EP02: 会员报名与支付](./user-stories/EP02-会员报名与支付.md)
-- [技术方案 - 5.3 支付与绑定混合方案](./技术方案.md)
-- [接口文档 - 第2章 OAuth授权](./接口文档.md)
-- [数据库设计 - payment_record表](./数据库设计.md)
+- [EP02: 会员报名与支付](../user-stories/EP02-会员报名与支付.md)
+- [技术方案 - 5.3 支付与绑定混合方案](../design/技术方案.md)
+- [接口文档 - 第2章 OAuth授权](../api/接口文档.md)
+- [数据库设计 - payment_record表](../design/数据库设计.md)
+- [状态枚举定义](../design/状态枚举定义.md)
 
 ---
 
-**文档版本**：v1.0
-**最后更新**：2025-12-04
-**维护者**：技术架构组
+**变更历史**：
+| 版本 | 日期 | 变更内容 |
+|------|------|----------|
+| v1.1 | 2025-12-06 | 添加 SSOT 引用；修复智能匹配引用为人工审核；修复相关文档链接路径 |
+| v1.0 | 2025-12-04 | 初始版本 |

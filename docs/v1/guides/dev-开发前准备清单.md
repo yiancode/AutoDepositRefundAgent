@@ -1,5 +1,9 @@
 # v1 版本开发前准备清单
 
+> **文档版本**: v1.1
+> **最后更新**: 2025-12-06
+> **SSOT引用**: [状态枚举定义.md](../design/状态枚举定义.md) - 所有状态枚举值定义
+
 **创建时间**: 2025-12-02
 **版本**: v1.0 完整生产级系统
 **预计开发周期**: 27 天（6 个 Stage + 集成测试）
@@ -360,7 +364,7 @@ sudo dnf install git -y
 | 表名 | 说明 | 关键字段 |
 |------|------|----------|
 | `training_camp` | 训练营 | status, planet_project_id |
-| `camp_member` | 训练营会员 | match_status, eligible_for_refund |
+| `camp_member` | 训练营会员 | bind_status, eligible_for_refund |
 | `planet_user` | 知识星球用户 | planet_user_id, planet_nickname |
 | `payment_record` | 支付记录 | **bind_status**, **bind_method**, bind_deadline |
 | `refund_record` | 退款记录 | refund_status, audit_status |
@@ -1364,74 +1368,10 @@ zsxq:
 
 ---
 
-### 6.3 FastAuth 会员同步配置（新增）
-
-> **用途**：定时从知识星球同步会员数据，用于 FastAuth 身份绑定和会员验证。详见 [FastAuth接入方案](../security/FastAuth接入方案.md) §2。
-
-**需要配置**:
-
-#### 6.3.1 会员同步定时任务
-
-**配置位置**: `application.yml` 或 `application.properties`
-
-```yaml
-# 会员同步配置（参考 FastAuth接入方案 §2.6）
-sync:
-  member:
-    enabled: true                      # 是否启用会员同步
-    cron: "0 0 2 * * ?"               # 每天凌晨2点同步
-    page-size: 100                     # 每页数量（知识星球 API 限制）
-    retry-times: 3                     # 失败重试次数
-    timeout-seconds: 30                # 请求超时时间
-
-# 数据库表（参考 FastAuth接入方案 §2.3）
-# - planet_user: 知识星球会员表
-# - sync_log: 同步日志表
-# - user_planet_binding: 用户绑定关系表（FastAuth + 星球会员）
-```
-
-#### 6.3.2 会员验证接口
-
-**接口清单**（参考 [接口文档](./接口文档.md) §3.7、§5）:
-1. `POST /api/h5/members/verify` - H5 会员验证（§3.7）
-2. `GET /api/h5/members/search?keyword=xxx` - H5 搜索会员（§3.8）
-3. `POST /api/admin/members/sync` - 管理后台手动触发同步（§5.7）
-4. `GET /api/admin/members/sync/status` - 管理后台查询同步状态（§5.8）
-5. `POST /api/admin/members/batch-verify` - 管理后台批量验证会员（§5.4）
-
-#### 6.3.3 会员同步环境变量
-
-```bash
-# 知识星球 API 配置（参考 §6.1）
-ZSXQ_GROUP_ID=15555411412112
-ZSXQ_COOKIE=zsxq_access_token=xxx
-
-# FastAuth 数据库表（参考 FastAuth接入方案 §2.3）
-# 确保以下表已创建：
-# - planet_user（扩展字段：user_number, avatar_url, joined_at, role, member_status, raw_data, synced_at）
-# - sync_log（新增表）
-# - user_planet_binding（新增表）
-```
-
-#### 6.3.4 会员同步监控
-
-**监控指标**:
-- 同步任务成功率（通过 sync_log 表查询）
-- 会员数据更新时间（synced_at 字段）
-- Cookie 过期告警（API 返回 401/403）
-
-**告警机制**:
-- Cookie 过期 → 企业微信通知管理员
-- 同步失败超过 3 次 → 记录到 operation_log 表
-
----
-
 ### ✅ 准备完成检查
 
 - [ ] 知识星球 API 配置已获取
 - [ ] 至少准备 1 个训练营的完整信息
-- [ ] **FastAuth 会员同步配置已完成**（新增）
-- [ ] **planet_user, sync_log, user_planet_binding 表已创建**（新增）
 
 ---
 
@@ -1633,16 +1573,6 @@ ZSXQ_COOKIE=zsxq_access_token=xxx
 - [ ] 微信公众号 AppSecret: 已生成并安全保存
 - [ ] 网页授权域名: ___________ 已配置
 - [ ] OAuth 回调 URL: 已配置
-
-### FastAuth 会员同步配置（必须，新增）
-
-- [ ] 知识星球 Group ID: ___________ 已配置
-- [ ] 知识星球 Cookie: 已获取并配置
-- [ ] 会员同步定时任务: 已配置（cron 表达式）
-- [ ] planet_user 表: 已创建并包含 FastAuth 扩展字段
-- [ ] sync_log 表: 已创建
-- [ ] user_planet_binding 表: 已创建
-- [ ] 会员验证接口: 已了解（5个接口）
 
 ### 开发环境（必须）
 

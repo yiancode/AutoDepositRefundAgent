@@ -1,3 +1,5 @@
+- always response in "简体中文"
+
 # Repository Guidelines
 
 ## ⚠️ IMPORTANT: v0 版本已废弃

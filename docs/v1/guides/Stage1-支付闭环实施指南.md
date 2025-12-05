@@ -1,6 +1,6 @@
 # Stage 1：支付闭环（垂直切片）- 实施指南
 
-> **优化依据**：《设计优化决策文档.md - P1-1》垂直切片原则
+> **优化依据**：《[优化完成总结](../archive/优化完成总结.md) - P1-1》垂直切片原则
 > **核心目标**：优先完成"用户报名→支付→绑定"最小可用路径（MVP）
 
 ---
@@ -91,7 +91,7 @@ CREATE TABLE wechat_user (
 2. 检查重复报名
 3. 生成订单号（ord_ + UUID）
 4. 创建payment_record：
-   - pay_status = PENDING
+   - pay_status = pending
    - bind_status = pending
    - planet_user_id_from_user = "123456789"
 5. 生成accessToken存入Redis
@@ -132,7 +132,7 @@ CREATE TABLE wechat_user (
 1. 验证签名
 2. 获取Redis锁（key=payment:callback:{orderNo}）
 3. 更新payment_record：
-   - pay_status = SUCCESS
+   - pay_status = success
    - bind_status = pending
    - bind_deadline = NOW() + 7天
 4. 更新Redis accessToken状态为active

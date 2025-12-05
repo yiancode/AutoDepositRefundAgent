@@ -1,7 +1,7 @@
 # OAuth 授权与支付绑定完整时序图
 
 > **文档目的**：详细描述从 OAuth 授权到支付、绑定星球账号的完整流程
-> **对应决策**：设计优化决策文档 P0-2（FastAuth 会员验证流程断层）和 P1-4（OAuth 绑定时序明确化）
+> **对应决策**：[优化完成总结](../archive/优化完成总结.md) P0-2（FastAuth 会员验证流程断层）和 P1-4（OAuth 绑定时序明确化）
 
 ---
 
@@ -76,7 +76,7 @@ sequenceDiagram
             API->>API: 生成订单号（ord_ + UUID）
             API->>API: 生成accessToken（tk_ + UUID）
 
-            API->>DB: INSERT INTO payment_record<br/>(order_no, camp_id, wechat_user_id,<br/> planet_user_id_from_user,<br/> pay_status=PENDING,<br/> bind_status=pending)
+            API->>DB: INSERT INTO payment_record<br/>(order_no, camp_id, wechat_user_id,<br/> planet_user_id_from_user,<br/> pay_status=pending,<br/> bind_status=pending)
 
             API->>Redis: 存储accessToken<br/>key=access_token:{token}<br/>value={orderNo, campId, wechatUserId, status=inactive}
 
@@ -110,7 +110,7 @@ sequenceDiagram
                 API->>Redis: 释放锁
                 API-->>WXPay: 返回SUCCESS（幂等处理）
             else 订单待支付
-                API->>DB: UPDATE payment_record<br/>SET pay_status=SUCCESS,<br/>    bind_status=pending,<br/>    bind_deadline=NOW()+7天,<br/>    paid_at=NOW()
+                API->>DB: UPDATE payment_record<br/>SET pay_status=success,<br/>    bind_status=pending,<br/>    bind_deadline=NOW()+7天,<br/>    paid_at=NOW()
 
                 API->>DB: INSERT INTO payment_status_log<br/>(payment_record_id, from_status, to_status)
 
@@ -136,9 +136,9 @@ sequenceDiagram
 
     API->>API: 验证accessToken.orderNo === 请求orderNo
     API->>DB: 查询payment_record（WHERE order_no=xxx）
-    DB-->>API: 返回{pay_status=SUCCESS, bind_status=pending}
+    DB-->>API: 返回{pay_status=success, bind_status=pending}
 
-    API-->>H5: 返回{payStatus: SUCCESS, bindStatus: pending,<br/>        remainingBindTime: 604800}
+    API-->>H5: 返回{payStatus: success, bindStatus: pending,<br/>        remainingBindTime: 604800}
 
     rect rgb(255, 255, 240)
         Note over User,DB: 阶段5：绑定星球账号
@@ -257,7 +257,7 @@ if (stateFromRedis == null || !stateFromRedis.equals(expectedState)) {
 
 **幂等性保证**：
 1. **Redis分布式锁**：`payment:callback:{orderNo}`，5分钟有效
-2. **数据库状态检查**：`pay_status != SUCCESS` 才更新
+2. **数据库状态检查**：`pay_status != success` 才更新
 3. **重复回调直接返回SUCCESS**
 
 **关键更新**：

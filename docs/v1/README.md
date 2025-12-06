@@ -56,7 +56,7 @@ docs/v1/
 
 | 文档 | 用途 | 大小 |
 |------|------|------|
-| [dev-文档评估指南.md](./guides/dev-文档评估指南.md) | **开发前文档评估顺序 + 检查清单** | 4KB |
+| [dev-文档评估指南.md](archive/dev-文档评估指南.md) | **开发前文档评估顺序 + 检查清单** | 4KB |
 | [dev-AI辅助敏捷开发计划.md](./guides/dev-AI辅助敏捷开发计划.md) | Stage 划分 + AI 提示词 | 42KB |
 | [dev-开发前准备清单.md](./guides/dev-开发前准备清单.md) | 环境配置 + 工具安装 | 39KB |
 | [dev-Stage1-支付闭环实施指南.md](./guides/dev-Stage1-支付闭环实施指南.md) | Stage 1 详细实施计划 | 10KB |

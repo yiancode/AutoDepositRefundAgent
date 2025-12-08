@@ -34,7 +34,7 @@ sequenceDiagram
     H5-->>OAuth: 跳转到微信授权页
 
     User->>OAuth: 点击"同意授权"
-    OAuth->>API: 回调 GET /api/auth/callback?code=xxx&state=yyy
+    OAuth->>API: 回调 GET /api/auth/callback/wechat-mp?code=xxx&state=yyy
     API->>Redis: 验证state是否有效
     Redis-->>API: 返回{returnUrl, timestamp}
 

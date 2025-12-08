@@ -31,7 +31,7 @@
 
 **交付物**：
 - `GET /api/auth/authorize` - 发起OAuth授权
-- `GET /api/auth/callback` - 处理微信回调
+- `GET /api/auth/callback/wechat-mp` - 处理微信回调
 - `wechat_user` 表CRUD
 
 **AI提示词**：
@@ -42,7 +42,7 @@
 - 生成state参数存入Redis（5分钟有效）
 - 重定向到微信授权页
 
-【接口2】GET /api/auth/callback?code=xxx&state=yyy
+【接口2】GET /api/auth/callback/wechat-mp?code=xxx&state=yyy
 - 验证state
 - 用code换取access_token和openid
 - 创建/更新wechat_user表

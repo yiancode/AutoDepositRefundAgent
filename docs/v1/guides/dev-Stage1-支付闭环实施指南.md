@@ -157,7 +157,7 @@ CREATE TABLE wechat_user (
 - `OAuth绑定完整时序图.md - 步骤50-69`
 
 **交付物**：
-- `POST /api/h5/orders/{orderNo}/planet-binding` - 绑定接口
+- `POST /api/h5/orders/{orderNo}/bind-planet` - 绑定接口
 - `user_planet_binding` 表CRUD
 - accessToken验证Filter
 
@@ -165,7 +165,7 @@ CREATE TABLE wechat_user (
 ```markdown
 我需要实现用户绑定星球账号接口，参考《EP02-会员报名与支付.md - S2.5》：
 
-【接口】POST /api/h5/orders/{orderNo}/planet-binding
+【接口】POST /api/h5/orders/{orderNo}/bind-planet
 【Header】X-Access-Token: tk_xxx
 【请求】
 {
@@ -251,12 +251,12 @@ CREATE TABLE wechat_user (
 
 3. **绑定页面** (`/bind/:orderNo` - Vue Router前端路由)
    - 确认或修改星球信息
-   - 提交绑定请求（调用后端API: `POST /api/h5/orders/{orderNo}/planet-binding`）
+   - 提交绑定请求（调用后端API: `POST /api/h5/orders/{orderNo}/bind-planet`）
    - 显示群二维码
 
    > 📝 **路由说明**：
    > - **前端路由**: `/bind/:orderNo` (Vue Router，浏览器地址栏)
-   > - **后端API**: `/api/h5/orders/{orderNo}/planet-binding` (Spring Boot接口)
+   > - **后端API**: `/api/h5/orders/{orderNo}/bind-planet` (Spring Boot接口)
 
 **技术栈**：
 - Vue 3 + Vite
@@ -273,7 +273,7 @@ CREATE TABLE wechat_user (
 - 点击报名 → POST /api/h5/payments → 跳转支付页
 
 【页面2】支付页面 Payment.vue
-- 调用 GET /api/h5/payments/{orderNo}/params 获取prepay_id
+- 调用 GET /api/h5/orders/{orderNo}/params 获取prepay_id
 - wx.chooseWXPay() 唤起支付
 - 支付成功 → 轮询 GET /api/h5/orders/{orderNo}/status
 - bindStatus=pending → 跳转绑定页
@@ -281,7 +281,7 @@ CREATE TABLE wechat_user (
 【页面3】绑定页面 Bind.vue
 - 显示订单信息
 - 确认星球信息
-- POST /api/h5/orders/{orderNo}/planet-binding
+- POST /api/h5/orders/{orderNo}/bind-planet
 - 绑定成功 → 显示群二维码
 
 【路由配置】

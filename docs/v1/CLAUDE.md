@@ -68,6 +68,6 @@ docs/v1/
 
 ## 文档版本
 
-- **索引版本**: v2.3
+- **索引版本**: v2.5
 - **技术栈**: Java 17 + Spring Boot 3.2 + PostgreSQL 15 + Vue 3
 - **详细索引**: 查看 `README.md`

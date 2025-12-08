@@ -249,14 +249,16 @@ CREATE TABLE wechat_user (
    - 调用wx.chooseWXPay()唤起微信支付
    - 支付成功后轮询订单状态
 
-3. **绑定页面** (`/bind/:orderNo` - Vue Router前端路由)
+3. **绑定页面** (`/bind-planet` - Vue Router前端路由)
+   - 从URL查询参数获取 token（`?token=tk_xxx`）
    - 确认或修改星球信息
    - 提交绑定请求（调用后端API: `POST /api/h5/orders/{orderNo}/bind-planet`）
    - 显示群二维码
 
    > 📝 **路由说明**：
-   > - **前端路由**: `/bind/:orderNo` (Vue Router，浏览器地址栏)
+   > - **前端路由**: `/bind-planet?token=tk_xxx` (Vue Router，浏览器地址栏)
    > - **后端API**: `/api/h5/orders/{orderNo}/bind-planet` (Spring Boot接口)
+   > - token 用于鉴权和获取订单信息，无需在URL路径中暴露 orderNo
 
 **技术栈**：
 - Vue 3 + Vite

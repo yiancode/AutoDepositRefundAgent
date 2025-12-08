@@ -1,7 +1,7 @@
 # AI 辅助敏捷开发计划
 
-> **文档版本**: v1.1
-> **最后更新**: 2025-12-06
+> **文档版本**: v1.2
+> **最后更新**: 2025-12-08
 > **SSOT引用**: [状态枚举定义.md](../design/状态枚举定义.md) - 所有状态枚举值定义
 > **⚠️ 重要更新**: Stage 4 中的"智能匹配"方案已废弃，统一改为"人工审核"流程。详见 [EP04-身份匹配.md](../user-stories/EP04-身份匹配.md)
 
@@ -45,10 +45,11 @@
 |-------|------|------|--------|---------|
 | Stage 0 | 2天 | **最小环境骨架** | 后端骨架 + 核心4表 + H5骨架 | ⚠️ 不含完整16表，不含管理后台 |
 | Stage 1 | 5天 | **⭐ 支付闭环（垂直切片）** | OAuth + 支付订单 + 绑定星球账号 + H5支付页面 | 🔄 **已优化**：优先完成核心支付路径 |
-| Stage 2 | 5天 | **管理后台 + 打卡同步** | 训练营CRUD + 管理后台骨架 + 知识星球打卡同步 | 🔄 **已调整**：管理功能与同步任务并行 |
-| Stage 3 | 3天 | 身份绑定与人工审核 | bind_status管理 + 人工审核流程 | ✅ 基于Stage 1的真实支付数据测试 |
-| Stage 4 | 4天 | 退款流程 | 审核 + 执行 + 通知 | ✅ Stage 3 |
-| Stage 5 | 4天 | 前端完善 + 系统管理 | H5完整页面 + 管理后台完善 + 统计报表 | ✅ Stage 4 |
+| Stage 2 | 5天 | **支付集成（混合方案）** | 微信支付接口 + 订单管理 | 🔄 **已调整**：管理功能与支付并行 |
+| Stage 3 | 4天 | **打卡同步** | 知识星球打卡数据同步 + 定时任务 | ✅ 基于真实支付数据测试 |
+| Stage 4 | 3天 | **绑定超时与人工审核** | 超时检测定时任务 + 人工审核接口 + 审核页面 | ✅ **已废弃智能匹配**，统一为人工审核 |
+| Stage 5 | 4天 | **退款流程** | 审核 + 执行 + 通知 | ✅ Stage 4 |
+| Stage 6 | 4天 | **前端完善 + 系统管理** | H5完整页面 + 管理后台完善 + 统计报表 | ✅ Stage 5 |
 
 **优化要点**：
 - ✅ Stage 1 优先实现支付闭环，最早暴露核心业务风险
@@ -906,96 +907,227 @@ API 返回打卡天数，需应用宽限规则：
 
 ---
 
-## Stage 4：混合匹配算法（3天）
+## Stage 4：绑定超时与人工审核（3天）
 
 ### 🎯 目标
-实现 bind_status 优先匹配 + 智能匹配（对应技术方案 Stage 4）
+实现绑定超时检测 + 人工审核流程（对应 EP04 Story 4.3 和 4.4）
+
+> **⚠️ 重要说明**：已废弃"智能匹配"方案，所有绑定方式置信度均为 100%，详见 [EP04-身份匹配.md](../user-stories/EP04-身份匹配.md)
 
 ### 📦 任务拆分
 
-#### 任务 4.1：混合匹配服务实现
+#### 任务 4.1：绑定超时检测定时任务
 - **优先级**：P0
-- **预计时间**：4 小时
-- **交付物**：MatchService 类
+- **预计时间**：3 小时
+- **交付物**：BindTimeoutCheckTask 类
 - **验收标准**：
-  - ✅ bind_status=completed 直接使用，置信度 100%
-  - ✅ bind_status=expired 启动智能匹配
-  - ✅ 智能匹配使用 Levenshtein 算法
+  - ✅ 每日 02:00 自动执行
+  - ✅ pending → expired（超过7天未绑定）
+  - ✅ expired → manual_review（转入人工审核）
+  - ✅ 记录状态日志
 
 #### 🤖 AI 提示词（任务 4.1）
 
 ```markdown
-我需要实现混合匹配算法，请严格按照技术方案 5.2.4 和 5.3.8 实现：
+我需要实现绑定超时检测定时任务，请严格按照 EP04 Story 4.3 实现：
 
-【MatchService.java】（com.camp.service）
+【BindTimeoutCheckTask.java】（com.camp.task）
 
-1. matchMembersForRefund(campId) → 为退款匹配所有合格用户
+1. checkExpiredBindings() → 检测并标记超时订单
 
-   【匹配优先级】（参考技术方案 5.2.4）
+   【检测逻辑】
    ```java
-   for (CampMember member : qualifiedMembers) {
-       PaymentRecord payment = getPaymentByMember(member);
+   @Scheduled(cron = "0 0 2 * * ?") // 每日 02:00
+   public void checkExpiredBindings() {
+       // 1. 查询所有 bind_status = 'pending' 且 NOW() > bind_deadline 的记录
+       List<PaymentRecord> expiredRecords = paymentMapper.selectList(
+           new LambdaQueryWrapper<PaymentRecord>()
+               .eq(PaymentRecord::getBindStatus, BindStatus.PENDING)
+               .lt(PaymentRecord::getBindDeadline, LocalDateTime.now())
+       );
 
-       switch (payment.getBindStatus()) {
-           case COMPLETED:
-               // 直接使用已绑定映射，置信度 100%
-               result.add(new MatchResult(member, payment.getPlanetUserId(), 100, payment.getBindMethod()));
-               break;
+       // 2. 批量更新为 expired
+       for (PaymentRecord record : expiredRecords) {
+           record.setBindStatus(BindStatus.EXPIRED);
+           paymentMapper.updateById(record);
 
-           case PENDING:
-               if (isExpired(payment.getBindDeadline())) {
-                   // 超时，启动智能匹配
-                   updateBindStatus(payment, EXPIRED);
-                   MatchResult match = smartMatch(member, payment);
-                   result.add(match);
-               } else {
-                   // 未超时，跳过等待用户绑定
-                   skipped.add(member);
-               }
-               break;
+           // 3. 记录状态日志
+           bindStatusLogService.log(record.getId(),
+               BindStatus.PENDING, BindStatus.EXPIRED,
+               null, "绑定超时");
 
-           case EXPIRED:
-           case null:
-               // 智能匹配
-               MatchResult match = smartMatch(member, payment);
-               result.add(match);
-               break;
+           // 4. 更新 accessToken 状态为 expired
+           tokenService.expire(record.getAccessToken());
        }
+
+       log.info("绑定超时检测完成，标记 {} 条订单为 expired", expiredRecords.size());
    }
-```
+   ```
 
-2. smartMatch(member, payment) → 智能匹配算法
+2. transferToManualReview() → 将 expired 订单转入人工审核
 
-   【匹配算法】（参考技术方案 5.2.7）
-   - 星球ID精确匹配 → 得分 50%
-   - 昵称相似度（Levenshtein）→ 得分 50%
-   - 总分 ≥ 80% → 匹配成功，bind_method=smart_match
-   - 总分 50-79% → 待审核
-   - 总分 < 50% → 需人工处理，bind_method=manual
+   【转换逻辑】
+   ```java
+   @Scheduled(cron = "0 30 2 * * ?") // 每日 02:30
+   public void transferToManualReview() {
+       // 1. 查询所有 bind_status = 'expired' 的记录
+       List<PaymentRecord> expiredRecords = paymentMapper.selectList(
+           new LambdaQueryWrapper<PaymentRecord>()
+               .eq(PaymentRecord::getBindStatus, BindStatus.EXPIRED)
+       );
 
-3. manualMatch(memberId, planetUserId) → 手动匹配
-   - 更新 bind_status=completed, bind_method=manual
-   - 置信度 100%
+       // 2. 批量更新为 manual_review
+       for (PaymentRecord record : expiredRecords) {
+           record.setBindStatus(BindStatus.MANUAL_REVIEW);
+           paymentMapper.updateById(record);
 
-【状态日志】
-每次匹配操作需记录到 payment_bind_status_log
+           // 3. 记录状态日志
+           bindStatusLogService.log(record.getId(),
+               BindStatus.EXPIRED, BindStatus.MANUAL_REVIEW,
+               null, "转入人工审核");
+       }
+
+       // 4. 发送通知给管理员
+       if (!expiredRecords.isEmpty()) {
+           notificationService.notifyAdmins(
+               "待审核绑定",
+               String.format("有 %d 条订单需要人工审核", expiredRecords.size())
+           );
+       }
+
+       log.info("转入人工审核完成，处理 {} 条订单", expiredRecords.size());
+   }
+   ```
+
+【单元测试】
+- 模拟超时订单，验证状态转换
+- 验证状态日志记录
+- 验证管理员通知发送
 
 请生成完整的代码和单元测试。
 ```
 
 ---
 
-#### 任务 4.2：匹配管理接口
-- **优先级**：P0
-- **预计时间**：3 小时
-- **交付物**：匹配相关接口
+#### 任务 4.2：人工审核接口实现
+- **优先级**：P1
+- **预计时间**：4 小时
+- **交付物**：ManualReviewController + ManualReviewService
 - **验收标准**：
-  - ✅ GET /api/admin/members?matchStatus=pending
-  - ✅ POST /api/admin/members/{id}/match（手动匹配）
+  - ✅ GET /api/admin/bindings/pending-review（查询待审核列表）
+  - ✅ POST /api/admin/bindings/{id}/match（手动匹配星球用户）
+  - ✅ POST /api/admin/bindings/{id}/close（标记无法匹配）
+  - ✅ POST /api/admin/bindings/batch-close（批量标记无法匹配）
+
+#### 🤖 AI 提示词（任务 4.2）
+
+```markdown
+我需要实现人工审核接口，请严格按照 EP04 Story 4.4 实现：
+
+【ManualReviewController.java】（com.camp.controller.admin）
+
+1. GET /api/admin/bindings/pending-review → 查询待审核列表
+
+   【请求参数】
+   - campId（可选）：训练营ID
+   - pageNum, pageSize：分页参数
+
+   【响应示例】
+   ```json
+   {
+     "code": 200,
+     "data": {
+       "items": [
+         {
+           "paymentId": 10001,
+           "orderNo": "ord_123",
+           "campName": "21天早起训练营",
+           "wechatNickname": "小明",
+           "payAmount": 99.00,
+           "payTime": "2025-12-01T10:30:00",
+           "bindDeadline": "2025-12-08T10:30:00",
+           "expiredDays": 2
+         }
+       ],
+       "total": 10,
+       "page": 1,
+       "pageSize": 20
+     }
+   }
+   ```
+
+2. POST /api/admin/bindings/{id}/match → 手动匹配星球用户
+
+   【请求体】
+   ```json
+   {
+     "planetUserId": "123456789",
+     "reason": "人工核实身份"
+   }
+   ```
+
+   【业务逻辑】
+   ```java
+   // 1. 验证 bind_status = 'manual_review'
+   // 2. 验证星球用户存在且未被其他订单绑定
+   // 3. 更新 bind_status = 'completed', bind_method = 'manual'
+   // 4. 记录状态日志（操作人、原因）
+   // 5. 返回成功
+   ```
+
+3. POST /api/admin/bindings/{id}/close → 标记无法匹配
+
+   【请求体】
+   ```json
+   {
+     "reason": "用户退出星球"
+   }
+   ```
+
+   【业务逻辑】
+   ```java
+   // 1. 验证 bind_status = 'manual_review'
+   // 2. 更新 bind_status = 'closed'
+   // 3. 记录状态日志（操作人、原因）
+   // 4. 返回成功
+   ```
+
+4. POST /api/admin/bindings/batch-close → 批量标记无法匹配
+
+   【请求体】
+   ```json
+   {
+     "paymentIds": [10001, 10002, 10003],
+     "reason": "批量处理无法匹配订单"
+   }
+   ```
+
+【权限要求】
+- 所有接口需要管理员权限（@PreAuthorize("hasRole('ADMIN')")）
+
+【单元测试】
+- 验证状态转换
+- 验证唯一性约束
+- 验证权限控制
+
+请生成完整的代码和单元测试。
+```
 
 ---
 
-## Stage 5：退款流程（4天）
+#### 任务 4.3：管理后台审核页面
+- **优先级**：P1
+- **预计时间**：4 小时
+- **交付物**：Vue 3 审核页面
+- **验收标准**：
+  - ✅ 展示待审核列表（表格）
+  - ✅ 支持搜索星球用户
+  - ✅ 支持单个匹配/关闭
+  - ✅ 支持批量关闭
+
+---
+
+## Stage 5：退款��程（4天）
 
 ### 🎯 目标
 完成退款列表生成、审核、执行、通知（对应技术方案 Stage 5）

@@ -56,13 +56,12 @@ docs/v1/
 
 | 文档 | 用途 | 大小 |
 |------|------|------|
-| [dev-文档评估指南.md](archive/dev-文档评估指南.md) | **开发前文档评估顺序 + 检查清单** | 4KB |
-| [dev-AI辅助敏捷开发计划.md](./guides/dev-AI辅助敏捷开发计划.md) | Stage 划分 + AI 提示词 | 42KB |
-| [dev-开发前准备清单.md](./guides/dev-开发前准备清单.md) | 环境配置 + 工具安装 | 39KB |
-| [dev-Stage1-支付闭环实施指南.md](./guides/dev-Stage1-支付闭环实施指南.md) | Stage 1 详细实施计划 | 10KB |
+| [dev-AI辅助敏捷开发计划.md](./guides/dev-AI辅助敏捷开发计划.md) | Stage 划分 + AI 提示词 | 44KB |
+| [dev-开发前准备清单.md](./guides/dev-开发前准备清单.md) | 环境配置 + 工具安装 | 36KB |
+| [dev-Stage1-支付闭环实施指南.md](./guides/dev-Stage1-支付闭环实施指南.md) | Stage 1 详细实施计划 | 11KB |
 | [dev-缓存策略与性能优化.md](./guides/dev-缓存策略与性能优化.md) | Redis 缓存 + 数据库优化 | 10KB |
 | [ops-监控指标体系.md](./guides/ops-监控指标体系.md) | 5 层监控指标 + 告警策略 | 10KB |
-| [user-管理后台操作指南.md](./guides/user-管理后台操作指南.md) | 后台使用说明 | 10KB |
+| [user-管理后台操作指南.md](./guides/user-管理后台操作指南.md) | 后台使用说明 | 11KB |
 
 ---
 
@@ -96,6 +95,7 @@ docs/v1/
 
 | 模板 | 用途 |
 |------|------|
+| [README.md](./templates/README.md) | 模板使用说明 |
 | [ADR-TEMPLATE.md](./templates/ADR-TEMPLATE.md) | 架构决策记录模板 |
 | [EPIC-TEMPLATE.md](./templates/EPIC-TEMPLATE.md) | Epic 文档模板 |
 | [TECH-DESIGN-TEMPLATE.md](./templates/TECH-DESIGN-TEMPLATE.md) | 技术设计文档模板 |
@@ -107,8 +107,10 @@ docs/v1/
 
 | 文档 | 说明 |
 |------|------|
+| [dev-文档评估指南.md](./archive/dev-文档评估指南.md) | 开发前文档评估顺序 + 检查清单 |
+| [dev-文档评估问题清单.md](./archive/dev-文档评估问题清单.md) | 文档一致性问题记录 |
 | [优化完成总结.md](./archive/优化完成总结.md) | 历史优化记录 |
-| [FastAuth接入方案.md](./archive/FastAuth接入方案.md) | 认证方案历史参考（已整合到技术方案.md） |
+| [FastAuth接入方案.md](./archive/FastAuth接入方案.md) | OAuth 认证方案详细设计（技术方案仍引用其章节） |
 | [BMAD-METHOD使用指南.md](./archive/BMAD-METHOD使用指南.md) | 方法论参考 |
 | [技术方案模板/](./archive/技术方案模板/) | 旧版模板（含示例图片） |
 
@@ -182,17 +184,19 @@ guides/dev-Stage1-支付闭环实施指南.md (实施计划)
 
 | 分类 | 数量 | 总大小 |
 |------|------|--------|
-| 设计文档 | 5 | ~243KB |
-| 接口文档 | 1 | ~76KB |
-| 安全方案 | 2 | ~30KB |
-| 开发指南 | 7 | ~130KB |
-| 用户故事 | 6 | ~65KB |
-| 图表 | 6 | ~98KB |
-| 模板 | 4 | ~8KB |
-| **合计** | **31** | **~650KB** |
+| 设计文档 | 5 | ~209KB |
+| 接口文档 | 1 | ~77KB |
+| 安全方案 | 2 | ~31KB |
+| 开发指南 | 6 | ~122KB |
+| 用户故事 | 6 | ~92KB |
+| 图表 | 6 | ~97KB |
+| 模板 | 5 | ~9KB |
+| 归档 | 8 | ~117KB |
+| 根目录 | 2 | ~10KB |
+| **合计** | **41** | **~764KB** |
 
 ---
 
-**索引版本**：v2.4
+**索引版本**：v2.5
 **最后更新**：2025-12-08
 **维护者**：技术架构组

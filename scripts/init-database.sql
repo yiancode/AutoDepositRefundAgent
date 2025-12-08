@@ -102,6 +102,7 @@ CREATE TABLE training_camp (
     -- 打卡要求
     total_days INTEGER NOT NULL,
     required_days INTEGER NOT NULL,
+    grace_days INTEGER DEFAULT 0,
 
     -- 群信息
     group_qrcode_url VARCHAR(500) NOT NULL,
@@ -147,6 +148,7 @@ COMMENT ON COLUMN training_camp.start_date IS '开始日期';
 COMMENT ON COLUMN training_camp.end_date IS '结束日期';
 COMMENT ON COLUMN training_camp.total_days IS '总天数';
 COMMENT ON COLUMN training_camp.required_days IS '要求打卡天数';
+COMMENT ON COLUMN training_camp.grace_days IS '宽限天数（实际打卡 >= required_days - grace_days 即合格）';
 COMMENT ON COLUMN training_camp.group_qrcode_url IS '群二维码URL';
 COMMENT ON COLUMN training_camp.planet_project_id IS '知识星球项目ID';
 COMMENT ON COLUMN training_camp.status IS '状态（SSOT）: draft-草稿, pending-待发布, enrolling-报名中, ongoing-进行中, ended-已结束, settling-结算中, archived-已归档';
@@ -1312,7 +1314,7 @@ BEGIN
             FROM checkin_record cr
             WHERE cr.member_id = cm.id
         ) >= (
-            SELECT required_days
+            SELECT required_days - COALESCE(grace_days, 0)
             FROM training_camp
             WHERE id = p_camp_id
         )

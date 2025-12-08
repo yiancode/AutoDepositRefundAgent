@@ -907,100 +907,113 @@ API 返回打卡天数，需应用宽限规则：
 
 ---
 
-## Stage 4：绑定超时与人工审核（3天）
+## Stage 4：星球信息校验与人工审核（3天）
 
 ### 🎯 目标
-实现绑定超时检测 + 人工审核流程（对应 EP04 Story 4.3 和 4.4）
+实现星球信息校验 + 人工审核流程（对应 EP04 Story 4.3 和 4.4）
 
-> **⚠️ 重要说明**：已废弃"智能匹配"方案，所有绑定方式置信度均为 100%，详见 [EP04-身份匹配.md](../user-stories/EP04-身份匹配.md)
+> **⚠️ 重要说明**：
+> - 已废弃"智能匹配"方案和"先付后绑"流程
+> - 现在采用"先填后付"流程，用户必须在支付前填写星球信息
+> - 人工审核仅用于处理：打卡同步时发现用户填写的星球ID无效的情况
 
 ### 📦 任务拆分
 
-#### 任务 4.1：绑定超时检测定时任务
+#### 任务 4.1：星球信息校验（集成到打卡同步）
 - **优先级**：P0
 - **预计时间**：3 小时
-- **交付物**：BindTimeoutCheckTask 类
+- **交付物**：在 CheckinSyncTask 中增加星球ID有效性校验逻辑
 - **验收标准**：
-  - ✅ 每日 02:00 自动执行
-  - ✅ pending → expired（超过7天未绑定）
-  - ✅ expired → manual_review（转入人工审核）
-  - ✅ 记录状态日志
+  - ✅ 打卡同步时验证星球ID是否存在
+  - ✅ 星球ID无效 → bind_status = manual_review
+  - ✅ 记录状态日志和异常原因
+  - ✅ 发送管理员通知
 
 #### 🤖 AI 提示词（任务 4.1）
 
 ```markdown
-我需要实现绑定超时检测定时任务，请严格按照 EP04 Story 4.3 实现：
+我需要在打卡同步任务中增加星球信息校验逻辑，请参考以下设计实现：
 
-【BindTimeoutCheckTask.java】（com.camp.task）
+【CheckinSyncTask.java - 增强版】（com.camp.task）
 
-1. checkExpiredBindings() → 检测并标记超时订单
+在同步打卡数据时，增加星球ID有效性校验：
 
-   【检测逻辑】
-   ```java
-   @Scheduled(cron = "0 0 2 * * ?") // 每日 02:00
-   public void checkExpiredBindings() {
-       // 1. 查询所有 bind_status = 'pending' 且 NOW() > bind_deadline 的记录
-       List<PaymentRecord> expiredRecords = paymentMapper.selectList(
-           new LambdaQueryWrapper<PaymentRecord>()
-               .eq(PaymentRecord::getBindStatus, BindStatus.PENDING)
-               .lt(PaymentRecord::getBindDeadline, LocalDateTime.now())
-       );
+```java
+@Scheduled(cron = "0 0 1 * * ?") // 每日 01:00
+public void syncCheckinData() {
+    // 获取所有进行中训练营的会员
+    List<CampMember> members = memberMapper.selectActiveMembersForSync();
 
-       // 2. 批量更新为 expired
-       for (PaymentRecord record : expiredRecords) {
-           record.setBindStatus(BindStatus.EXPIRED);
-           paymentMapper.updateById(record);
+    for (CampMember member : members) {
+        try {
+            // 1. 调用知识星球API查询用户打卡数据
+            ZsxqUserCheckin checkinData = zsxqApiService.getUserCheckin(
+                member.getPlanetUserId(),
+                member.getCampId()
+            );
 
-           // 3. 记录状态日志
-           bindStatusLogService.log(record.getId(),
-               BindStatus.PENDING, BindStatus.EXPIRED,
-               null, "绑定超时");
+            if (checkinData == null) {
+                // 2. 星球ID无效，转入人工审核
+                handleInvalidPlanetUser(member, "星球ID无效或用户不存在");
+                continue;
+            }
 
-           // 4. 更新 accessToken 状态为 expired
-           tokenService.expire(record.getAccessToken());
-       }
+            // 3. 正常同步打卡数据
+            member.setCheckinCount(checkinData.getCheckinDays());
+            member.setLastSyncTime(LocalDateTime.now());
+            memberMapper.updateById(member);
 
-       log.info("绑定超时检测完成，标记 {} 条订单为 expired", expiredRecords.size());
-   }
-   ```
+            log.info("同步打卡成功: memberId={}, checkinCount={}",
+                member.getId(), checkinData.getCheckinDays());
 
-2. transferToManualReview() → 将 expired 订单转入人工审核
+        } catch (ZsxqApiException e) {
+            log.error("同步打卡数据失败: memberId={}, error={}",
+                member.getId(), e.getMessage());
+        }
+    }
+}
 
-   【转换逻辑】
-   ```java
-   @Scheduled(cron = "0 30 2 * * ?") // 每日 02:30
-   public void transferToManualReview() {
-       // 1. 查询所有 bind_status = 'expired' 的记录
-       List<PaymentRecord> expiredRecords = paymentMapper.selectList(
-           new LambdaQueryWrapper<PaymentRecord>()
-               .eq(PaymentRecord::getBindStatus, BindStatus.EXPIRED)
-       );
+/**
+ * 处理无效的星球用户
+ */
+private void handleInvalidPlanetUser(CampMember member, String reason) {
+    // 1. 查找对应的支付记录
+    PaymentRecord payment = paymentMapper.selectByMemberId(member.getId());
+    if (payment == null) {
+        log.error("找不到会员对应的支付记录: memberId={}", member.getId());
+        return;
+    }
 
-       // 2. 批量更新为 manual_review
-       for (PaymentRecord record : expiredRecords) {
-           record.setBindStatus(BindStatus.MANUAL_REVIEW);
-           paymentMapper.updateById(record);
+    // 2. 更新绑定状态为人工审核
+    BindStatus oldStatus = payment.getBindStatus();
+    payment.setBindStatus(BindStatus.MANUAL_REVIEW);
+    payment.setRemark(reason);
+    paymentMapper.updateById(payment);
 
-           // 3. 记录状态日志
-           bindStatusLogService.log(record.getId(),
-               BindStatus.EXPIRED, BindStatus.MANUAL_REVIEW,
-               null, "转入人工审核");
-       }
+    // 3. 记录状态日志
+    bindStatusLogService.log(
+        payment.getId(),
+        oldStatus,
+        BindStatus.MANUAL_REVIEW,
+        null,  // 系统自动处理，无操作人
+        reason
+    );
 
-       // 4. 发送通知给管理员
-       if (!expiredRecords.isEmpty()) {
-           notificationService.notifyAdmins(
-               "待审核绑定",
-               String.format("有 %d 条订单需要人工审核", expiredRecords.size())
-           );
-       }
+    // 4. 发送管理员通知
+    notificationService.notifyAdmins(
+        "星球信息异常",
+        String.format("会员 %s (订单号: %s) 的星球ID无效，需人工审核",
+            member.getPlanetNickname(), payment.getOrderNo())
+    );
 
-       log.info("转入人工审核完成，处理 {} 条订单", expiredRecords.size());
-   }
-   ```
+    log.warn("星球信息校验失败，转入人工审核: memberId={}, reason={}",
+        member.getId(), reason);
+}
+```
 
 【单元测试】
-- 模拟超时订单，验证状态转换
+- 模拟星球API返回null，验证转入人工审核
+- 模拟正常同步，验证打卡数据更新
 - 验证状态日志记录
 - 验证管理员通知发送
 
@@ -1019,10 +1032,12 @@ API 返回打卡天数，需应用宽限规则：
   - ✅ POST /api/admin/bindings/{id}/close（标记无法匹配）
   - ✅ POST /api/admin/bindings/batch-close（批量标记无法匹配）
 
+> **触发场景**：打卡同步时发现用户填写的星球ID在知识星球中不存在，系统自动将其标记为 `manual_review`，由管理员人工处理。
+
 #### 🤖 AI 提示词（任务 4.2）
 
 ```markdown
-我需要实现人工审核接口，请严格按照 EP04 Story 4.4 实现：
+我需要实现人工审核接口，用于处理星球信息校验失败的订单：
 
 【ManualReviewController.java】（com.camp.controller.admin）
 
@@ -1564,7 +1579,7 @@ npm run build
 | Stage 1 | ⚪ 未开始 | 0% | 基础框架 |
 | Stage 2 | ⚪ 未开始 | 0% | 支付集成 |
 | Stage 3 | ⚪ 未开始 | 0% | 打卡同步 |
-| Stage 4 | ⚪ 未开始 | 0% | 匹配算法 |
+| Stage 4 | ⚪ 未开始 | 0% | 绑定超时+人工审核 |
 | Stage 5 | ⚪ 未开始 | 0% | 退款流程 |
 | Stage 6 | ⚪ 未开始 | 0% | 前端开发 |
 
@@ -1575,7 +1590,7 @@ graph LR
     S0[Stage 0: 环境搭建] --> S1[Stage 1: 基础框架]
     S1 --> S2[Stage 2: 支付集成]
     S2 --> S3[Stage 3: 打卡同步]
-    S3 --> S4[Stage 4: 匹配算法]
+    S3 --> S4[Stage 4: 绑定超时+人工审核]
     S4 --> S5[Stage 5: 退款流程]
     S1 --> S6[Stage 6: 前端开发]
     S5 --> S6
@@ -1588,7 +1603,7 @@ graph LR
 这份 AI 辅助敏捷开发计划的核心特点：
 
 1. **严格对齐技术文档**：6 个 Stage 完全对应技术方案的分阶段验证计划
-2. **完整覆盖混合匹配方案**：OAuth绑定 + 支付后绑定 + 智能匹配
+2. **完整覆盖混合绑定方案**：OAuth绑定 + 固定二维码绑定 + 人工审核
 3. **包含 H5 安全机制**：accessToken 票据验证
 4. **状态日志完整**：5 张状态日志表全部实现
 5. **通知系统完善**：notification_message 表 + 定时任务

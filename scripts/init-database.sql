@@ -1,12 +1,13 @@
 -- ============================================================
 -- 知识星球训练营自动押金退款系统 - 数据库初始化脚本
 -- ============================================================
--- 版本: v1.1
+-- 版本: v1.2
 -- 数据库: PostgreSQL 15+
 -- 字符集: UTF-8
--- 生成日期: 2025-12-08
+-- 生成日期: 2025-12-12
 -- 来源文档: docs/v1/design/数据库设计.md
 -- SSOT引用: docs/v1/design/状态枚举定义.md
+-- 对齐参考: zsxq-sdk Java 模型 (com.zsxq.sdk.model.*)
 -- ============================================================
 
 -- 使用前请先创建数据库:
@@ -107,8 +108,11 @@ CREATE TABLE training_camp (
     -- 群信息
     group_qrcode_url VARCHAR(500) NOT NULL,
 
-    -- 关联信息
+    -- 关联信息（zsxq-sdk Checkin.java 模型对齐）
     planet_project_id VARCHAR(50) NOT NULL,
+    planet_checkin_id VARCHAR(50),           -- API返回的 checkin_id（与planet_project_id同义，建议使用此字段）
+    planet_status VARCHAR(20),               -- API原始状态：ongoing/closed/over
+    cover_url VARCHAR(500),                  -- 打卡项目封面URL（API返回）
 
     -- 状态（引用 SSOT: 状态枚举定义.md#5-camp_status）
     status VARCHAR(20) NOT NULL DEFAULT 'draft',
@@ -137,6 +141,7 @@ CREATE TABLE training_camp (
 CREATE INDEX idx_camp_status ON training_camp(status) WHERE deleted_at IS NULL;
 CREATE INDEX idx_camp_dates ON training_camp(start_date, end_date) WHERE deleted_at IS NULL;
 CREATE INDEX idx_camp_planet_id ON training_camp(planet_project_id);
+CREATE INDEX idx_camp_checkin_id ON training_camp(planet_checkin_id);
 CREATE INDEX idx_camp_status_dates ON training_camp(status, start_date, end_date) WHERE deleted_at IS NULL;
 
 COMMENT ON TABLE training_camp IS '训练营表';
@@ -150,7 +155,10 @@ COMMENT ON COLUMN training_camp.total_days IS '总天数';
 COMMENT ON COLUMN training_camp.required_days IS '要求打卡天数';
 COMMENT ON COLUMN training_camp.grace_days IS '宽限天数（实际打卡 >= required_days - grace_days 即合格）';
 COMMENT ON COLUMN training_camp.group_qrcode_url IS '群二维码URL';
-COMMENT ON COLUMN training_camp.planet_project_id IS '知识星球项目ID';
+COMMENT ON COLUMN training_camp.planet_project_id IS '知识星球项目ID（业务使用）';
+COMMENT ON COLUMN training_camp.planet_checkin_id IS 'API返回的checkin_id（与zsxq-sdk Checkin.java模型对齐）';
+COMMENT ON COLUMN training_camp.planet_status IS 'API原始状态: ongoing-进行中, closed-已关闭, over-已结束';
+COMMENT ON COLUMN training_camp.cover_url IS '打卡项目封面URL（API返回）';
 COMMENT ON COLUMN training_camp.status IS '状态（SSOT）: draft-草稿, pending-待发布, enrolling-报名中, ongoing-进行中, ended-已结束, settling-结算中, archived-已归档';
 COMMENT ON COLUMN training_camp.enroll_url IS 'H5报名链接';
 COMMENT ON COLUMN training_camp.member_count IS '报名人数';
@@ -189,10 +197,14 @@ COMMENT ON COLUMN camp_member_relation.user_id IS '用户ID（教练或志愿者
 COMMENT ON COLUMN camp_member_relation.role_type IS '角色类型: coach-教练, volunteer-志愿者';
 
 -- ------------------------------------------------------------
--- 2.4 知识星球用户表（planet_user）- Excel离线导入
+-- 2.4 知识星球用户表（planet_user）- Excel离线导入 + API同步
 -- ------------------------------------------------------------
 CREATE TABLE planet_user (
     id BIGSERIAL PRIMARY KEY,
+
+    -- API标识字段（zsxq-sdk User.java 模型对齐）
+    planet_user_id VARCHAR(50),              -- API返回的 user_id（关键：打卡关联依赖此字段）
+    planet_uid VARCHAR(50),                  -- API返回的 uid
 
     -- 基础信息（Excel 导入核心字段）
     member_number VARCHAR(20) NOT NULL,
@@ -201,6 +213,11 @@ CREATE TABLE planet_user (
     profile_nickname VARCHAR(100),
     remark_nickname VARCHAR(100),
     knowledge_id VARCHAR(50),
+
+    -- API扩展字段（zsxq-sdk User.java 模型）
+    avatar_url VARCHAR(500),                 -- 用户头像URL（API返回）
+    location VARCHAR(100),                   -- 用户位置（API返回）
+    introduction TEXT,                       -- 用户简介（API返回）
 
     -- 身份与状态
     role VARCHAR(20) NOT NULL DEFAULT 'member',
@@ -253,19 +270,25 @@ CREATE TABLE planet_user (
 );
 
 CREATE INDEX idx_pu_member_number ON planet_user(member_number) WHERE deleted_at IS NULL;
+CREATE INDEX idx_pu_planet_user_id ON planet_user(planet_user_id) WHERE deleted_at IS NULL;
 CREATE INDEX idx_pu_user_nickname ON planet_user(user_nickname) WHERE deleted_at IS NULL;
 CREATE INDEX idx_pu_wechat_nickname ON planet_user(wechat_nickname) WHERE deleted_at IS NULL;
 CREATE INDEX idx_pu_role ON planet_user(role) WHERE deleted_at IS NULL;
 CREATE INDEX idx_pu_is_exited ON planet_user(is_exited) WHERE deleted_at IS NULL;
 CREATE INDEX idx_pu_import_batch ON planet_user(import_batch_id);
 
-COMMENT ON TABLE planet_user IS '知识星球会员表（Excel 离线导入）';
-COMMENT ON COLUMN planet_user.member_number IS '成员编号（星球唯一标识，如：123456）';
+COMMENT ON TABLE planet_user IS '知识星球会员表（Excel 离线导入 + API同步）';
+COMMENT ON COLUMN planet_user.planet_user_id IS 'API返回的user_id（关键：打卡数据关联依赖此字段）';
+COMMENT ON COLUMN planet_user.planet_uid IS 'API返回的uid（字符串形式用户标识）';
+COMMENT ON COLUMN planet_user.member_number IS '成员编号（星球唯一标识，Excel导入，如：123456）';
 COMMENT ON COLUMN planet_user.user_nickname IS '用户昵称';
 COMMENT ON COLUMN planet_user.wechat_nickname IS '微信昵称';
 COMMENT ON COLUMN planet_user.profile_nickname IS '星球名片昵称';
 COMMENT ON COLUMN planet_user.remark_nickname IS '星球内备注昵称（运营设置）';
 COMMENT ON COLUMN planet_user.knowledge_id IS '知识号';
+COMMENT ON COLUMN planet_user.avatar_url IS '用户头像URL（API返回）';
+COMMENT ON COLUMN planet_user.location IS '用户位置（API返回）';
+COMMENT ON COLUMN planet_user.introduction IS '用户简介（API返回）';
 COMMENT ON COLUMN planet_user.role IS '身份: owner-星主, admin-管理员, partner-合伙人, member-普通成员';
 COMMENT ON COLUMN planet_user.is_paid_join IS '是否付费加入';
 COMMENT ON COLUMN planet_user.is_blocked IS '是否被拉黑';
@@ -432,6 +455,8 @@ CREATE TABLE camp_member (
     checkin_count INTEGER DEFAULT 0,
     checkin_rate DECIMAL(5,2) DEFAULT 0,
     last_checkin_time TIMESTAMP,
+    continuous_checkin_count INTEGER DEFAULT 0,    -- 当前连续打卡天数（zsxq-sdk RankingItem.java 模型对齐）
+    max_continuous_count INTEGER DEFAULT 0,        -- 最长连续打卡天数
 
     -- 打卡合格状态（引用 SSOT: 状态枚举定义.md#7-checkin_status）
     checkin_status VARCHAR(20) NOT NULL DEFAULT 'pending',
@@ -487,6 +512,8 @@ COMMENT ON COLUMN camp_member.joined_at IS '进群时间';
 COMMENT ON COLUMN camp_member.checkin_count IS '已打卡天数';
 COMMENT ON COLUMN camp_member.checkin_rate IS '打卡完成率(%)';
 COMMENT ON COLUMN camp_member.last_checkin_time IS '最后打卡时间';
+COMMENT ON COLUMN camp_member.continuous_checkin_count IS '当前连续打卡天数（与zsxq-sdk RankingItem.java continuousCount对齐）';
+COMMENT ON COLUMN camp_member.max_continuous_count IS '最长连续打卡天数';
 COMMENT ON COLUMN camp_member.checkin_status IS '打卡合格状态（SSOT）: pending-待统计, qualified-合格, unqualified-不合格';
 COMMENT ON COLUMN camp_member.full_attendance IS '是否全勤';
 COMMENT ON COLUMN camp_member.eligible_for_refund IS '是否符合退款条件';
@@ -593,8 +620,11 @@ CREATE TABLE checkin_record (
     checkin_time TIMESTAMP NOT NULL,
     checkin_content TEXT,
 
-    -- 知识星球原始数据
-    planet_checkin_id VARCHAR(50),
+    -- 知识星球原始数据（zsxq-sdk CheckinRecord.java, Topic.java 模型对齐）
+    planet_topic_id VARCHAR(50),              -- API返回的 topic_id（话题ID，打卡记录对应话题）
+    planet_topic_uid VARCHAR(50),             -- API返回的 topic_uid
+    planet_user_id VARCHAR(50),               -- 打卡用户的API user_id（关键：用于关联打卡与会员）
+    planet_checkin_id VARCHAR(50),            -- 知识星球打卡项目ID（冗余，方便查询）
     raw_data JSONB,
 
     -- 同步信息
@@ -616,6 +646,7 @@ CREATE INDEX idx_cr_planet_member ON checkin_record(planet_member_number);
 CREATE INDEX idx_cr_member ON checkin_record(member_id);
 CREATE INDEX idx_cr_date ON checkin_record(checkin_date);
 CREATE INDEX idx_cr_camp_date ON checkin_record(camp_id, checkin_date);
+CREATE INDEX idx_cr_planet_user_id ON checkin_record(planet_user_id);
 CREATE INDEX idx_checkin_camp_date ON checkin_record(camp_id, checkin_date);
 
 COMMENT ON TABLE checkin_record IS '打卡记录表';
@@ -625,6 +656,9 @@ COMMENT ON COLUMN checkin_record.member_id IS '会员ID（匹配后关联）';
 COMMENT ON COLUMN checkin_record.checkin_date IS '打卡日期';
 COMMENT ON COLUMN checkin_record.checkin_time IS '打卡时间';
 COMMENT ON COLUMN checkin_record.checkin_content IS '打卡内容';
+COMMENT ON COLUMN checkin_record.planet_topic_id IS 'API返回的topic_id（话题ID，打卡记录对应话题）';
+COMMENT ON COLUMN checkin_record.planet_topic_uid IS 'API返回的topic_uid';
+COMMENT ON COLUMN checkin_record.planet_user_id IS '打卡用户的API user_id（关键：用于关联打卡与会员）';
 COMMENT ON COLUMN checkin_record.planet_checkin_id IS '知识星球打卡ID';
 COMMENT ON COLUMN checkin_record.raw_data IS '原始数据';
 COMMENT ON COLUMN checkin_record.synced_at IS '同步时间';
@@ -1309,6 +1343,35 @@ BEGIN
             FROM checkin_record cr
             WHERE cr.member_id = cm.id
         ),
+        -- 计算当前连续打卡天数（简化版：统计从今天往前的连续天数）
+        continuous_checkin_count = (
+            SELECT COUNT(*)
+            FROM (
+                SELECT checkin_date,
+                       checkin_date - (ROW_NUMBER() OVER (ORDER BY checkin_date DESC))::INT AS grp
+                FROM checkin_record cr
+                WHERE cr.member_id = cm.id
+            ) grouped
+            WHERE grp = (
+                SELECT checkin_date - 1::INT
+                FROM (
+                    SELECT checkin_date
+                    FROM checkin_record
+                    WHERE member_id = cm.id
+                    ORDER BY checkin_date DESC
+                    LIMIT 1
+                ) latest
+            ) OR grp = (
+                SELECT checkin_date
+                FROM (
+                    SELECT checkin_date
+                    FROM checkin_record
+                    WHERE member_id = cm.id
+                    ORDER BY checkin_date DESC
+                    LIMIT 1
+                ) latest
+            )
+        ),
         eligible_for_refund = (
             SELECT COUNT(*)
             FROM checkin_record cr
@@ -1323,7 +1386,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-COMMENT ON FUNCTION update_member_checkin_stats IS '批量更新指定训练营的会员打卡统计';
+COMMENT ON FUNCTION update_member_checkin_stats IS '批量更新指定训练营的会员打卡统计（含连续打卡天数，对齐zsxq-sdk MyCheckinStatistics.java）';
 
 -- ------------------------------------------------------------
 -- 6.3 生成退款审核列表

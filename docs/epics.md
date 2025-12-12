@@ -19,13 +19,16 @@ This document provides the complete epic and story breakdown for AutoDepositRefu
 
 ### Document Hierarchy
 
-本文档是 Epic 和 Story 的**唯一数据源**，替代原有 `docs/v1/user-stories/EP0*.md` 文档。
+本文档用于将 `docs/PRD.md` 的功能需求拆解为可实施的 Epic/Story，并与 `docs/v1/` 的 SSOT（状态枚举、数据库、接口）保持一致。
+如本文档与 SSOT 文档冲突，以 SSOT 文档为准；`docs/v1/user-stories/` 作为详细用户故事与验收标准的参考来源保留。
 
 | 层级 | 文档位置 | 说明 |
 |------|---------|------|
 | PRD | `docs/PRD.md` | 产品需求文档 |
-| **Epics & Stories** | **本文档** | Epic 拆分和 User Story |
+| **Epics & Stories** | **本文档** | Epic/Story 实施拆解与覆盖追踪 |
+| User Stories | `docs/v1/user-stories/` | 详细用户故事（验收标准/边界条件） |
 | 技术设计 | `docs/v1/design/` | 数据库、API、状态枚举等 |
+| 接口文档 | `docs/v1/api/接口文档.md` | REST API 定义 |
 | 实施指南 | `docs/v1/guides/` | 开发计划、运维指南 |
 
 ### SSOT References
@@ -37,6 +40,9 @@ This document provides the complete epic and story breakdown for AutoDepositRefu
 | 状态枚举值 | [`docs/v1/design/状态枚举定义.md`](./v1/design/状态枚举定义.md) |
 | 数据库表结构 | [`docs/v1/design/数据库设计.md`](./v1/design/数据库设计.md) |
 | API 规范 | [`docs/v1/design/API设计规范.md`](./v1/design/API设计规范.md) |
+| API 接口清单 | [`docs/v1/api/接口文档.md`](./v1/api/接口文档.md) |
+| 通知模板 | [`docs/v1/design/通知消息模板.md`](./v1/design/通知消息模板.md) |
+| 监控指标 | [`docs/v1/guides/ops-监控指标体系.md`](./v1/guides/ops-监控指标体系.md) |
 
 ### Related Design Decisions
 
@@ -61,7 +67,7 @@ This document provides the complete epic and story breakdown for AutoDepositRefu
 - **FR1.4**: 发布训练营 - 生成H5报名链接和二维码供会员扫码报名
 - **FR1.5**: 训练营列表查询 - 支持分页、按状态筛选、按时间范围筛选、关键词搜索
 - **FR1.6**: 训练营详情查看 - 展示概览数据、报名列表、打卡情况、退款情况四个Tab
-- **FR1.7**: 训练营状态自动更新 - 定时任务根据日期自动推进状态 (draft→pending→enrolling→ongoing→ended→settling→archived)
+- **FR1.7**: 训练营状态自动更新 - 定时任务根据日期自动推进状态 (enrolling→ongoing→ended)，其他状态由管理员操作或结算流程驱动（见SSOT）
 
 ### FR2: 会员报名与支付 (Member Enrollment & Payment)
 - **FR2.1**: H5训练营列表展示 - 卡片式布局,显示海报/名称/金额/日期/打卡要求/报名人数
@@ -79,7 +85,7 @@ This document provides the complete epic and story breakdown for AutoDepositRefu
 - **FR3.3**: 绑定超时检查 - 定时任务检查bind_status=pending且超过7天的记录,自动转为expired→manual_review
 - **FR3.4**: 人工绑定 - 管理员在后台手动关联支付记录与星球用户 (bind_method=manual)
 - **FR3.5**: 绑定状态查询 - 会员在H5查看绑定状态,管理员在后台查看所有会员绑定情况
-- **FR3.6**: 访问票据(accessToken)管理 - 生成、验证、状态更新 (active→bound→expired)、定时清理过期票据
+- **FR3.6**: 访问票据(accessToken)管理 - 生成、验证、状态更新 (inactive→active→bound→expired)、定时清理过期票据
 
 ### FR4: 打卡数据同步 (Check-in Data Sync)
 - **FR4.1**: 知识星球API集成 - 使用zsxq-sdk调用知识星球API获取打卡排行榜数据
@@ -99,9 +105,9 @@ This document provides the complete epic and story breakdown for AutoDepositRefu
 
 ### FR6: 退款审核与执行 (Refund Review & Execution)
 - **FR6.1**: 退款名单生成 - 训练营结束后自动生成退款名单,筛选eligible_for_refund=true的会员
-- **FR6.2**: 退款审核列表 - 展示待审核/已审核/已拒绝的退款记录,显示打卡情况/绑定状态/匹配置信度
+- **FR6.2**: 退款审核列表 - 展示待审核/已审核/已拒绝的退款记录,显示打卡情况/绑定状态/绑定方式
 - **FR6.3**: 单个审核 - 管理员可单个审核通过或拒绝,记录拒绝原因
-- **FR6.4**: 批量审核 - 支持批量审核通过,可设置最低置信度阈值,二次确认防误操作
+- **FR6.4**: 批量审核 - 支持批量审核通过/拒绝（可配置仅处理已完成绑定记录）,二次确认防误操作
 - **FR6.5**: 退款执行 - 调用微信支付退款API执行退款,记录退款流水号
 - **FR6.6**: 退款失败重试 - 退款失败时自动重试最多3次,超过次数标记为人工处理
 - **FR6.7**: 退款成功通知 - 退款成功后通过企业微信应用消息通知会员
@@ -326,7 +332,7 @@ This document provides the complete epic and story breakdown for AutoDepositRefu
 - 生成的报名链接可直接用于会员招募
 
 **技术依赖**:
-- 数据库表: `training_camp`, `system_user`, `role`, `camp_status_log`
+- 数据库表: `training_camp`, `system_user`, `camp_status_log`
 - 技术栈: Spring Boot 3.2, MyBatis Plus, JWT认证, Redis缓存
 - 外部依赖: 腾讯云COS (图片上传)
 
@@ -450,7 +456,7 @@ Feature: 训练营管理
 
   Scenario: 查询训练营列表
     Given 存在 10 个训练营
-    When GET /api/admin/camps?page=1&size=5&status=ongoing
+    When GET /api/admin/camps?page=1&pageSize=5&status=ongoing
     Then 返回分页数据 (5条记录)
     And 总数为满足条件的记录数
 
@@ -511,16 +517,12 @@ Feature: 训练营管理
 ```gherkin
 Feature: 训练营发布
   Scenario: 发布训练营
-    Given 存在状态为 draft 的完整训练营
+    Given 存在状态为 pending 的完整训练营
     When POST /api/admin/camps/{id}/publish
     Then 返回 200 OK
-    And 训练营状态变为 pending
-    And 生成 enrollUrl (H5报名链接)
-
-  Scenario: 获取报名二维码
-    Given 训练营已发布
-    When GET /api/admin/camps/{id}/qrcode
-    Then 返回 enrollUrl 对应的二维码图片
+    And 训练营状态变为 enrolling
+    And 返回 enrollUrl (H5报名链接)
+    And 返回 dynamicQrcodeUrl (前端用于生成报名二维码的链接)
 
   Scenario: 发布失败 - 信息不完整
     Given 存在状态为 draft 但缺少群二维码的训练营
@@ -531,14 +533,13 @@ Feature: 训练营发布
 
 **技术实现要点**:
 - 发布校验: 检查所有必填字段 (名称、海报、押金、日期、打卡要求、群二维码、教练)
-- 生成 enrollUrl: `https://domain.com/h5/enroll/{campId}`
-- 二维码生成: 使用 ZXing 库生成 QR Code
-- 状态流转: draft → pending，记录到 camp_status_log
+- 生成 enrollUrl: `https://h5.example.com/enroll/{campId}`
+- 返回 dynamicQrcodeUrl（例如 `https://h5.example.com/enroll/{campId}?source=qrcode`），由前端生成二维码
+- 状态流转: pending → enrolling，记录到 camp_status_log
 
 **涉及文件**:
-- `controller/admin/CampController.java` - 新增 publish/qrcode 接口
-- `service/CampService.java` - 新增 publish/generateQrCode 方法
-- `util/QrCodeUtil.java` - 二维码生成工具
+- `controller/admin/CampController.java` - 新增 publish 接口
+- `service/CampService.java` - 新增 publish 方法
 
 **覆盖FR**: FR1.4
 
@@ -555,18 +556,12 @@ Feature: 训练营发布
 **验收标准 (BDD)**:
 ```gherkin
 Feature: 训练营状态自动更新
-  Scenario: 自动更新为报名中
-    Given 存在 pending 状态的训练营
-    And 当前日期 >= 报名开始日期
-    When 定时任务执行 (每天 00:05)
-    Then 训练营状态更新为 enrolling
-    And 记录状态变更日志
-
   Scenario: 自动更新为进行中
     Given 存在 enrolling 状态的训练营
     And 当前日期 >= 训练营开始日期
-    When 定时任务执行
+    When 定时任务执行 (每天 00:05)
     Then 训练营状态更新为 ongoing
+    And 记录状态变更日志
 
   Scenario: 自动更新为已结束
     Given 存在 ongoing 状态的训练营
@@ -577,7 +572,8 @@ Feature: 训练营状态自动更新
 
 **技术实现要点**:
 - 使用 Spring Scheduler: `@Scheduled(cron = "0 5 0 * * ?")`
-- 状态流转: pending → enrolling → ongoing → ended → settling → archived
+- 自动流转范围: enrolling → ongoing → ended
+- 其他流转: draft/pending/enrolling 由管理员操作，ended→settling→archived 由结算流程驱动（见 EP01-S07）
 - 批量更新: 单次事务处理多个训练营
 - 日志记录: 每次状态变更记录到 camp_status_log
 
@@ -606,11 +602,11 @@ Feature: 用户管理
     Then 返回 201 Created
     And 密码使用 BCrypt 加密存储
 
-  Scenario: 重置用户密码
-    Given 存在系统用户
-    When POST /api/admin/users/{id}/reset-password
-    Then 生成随机密码
-    And 返回新密码给管理员
+  Scenario: 查看用户列表
+    Given 超级管理员已登录
+    When GET /api/admin/users
+    Then 返回用户列表
+    And 返回字段包含 username/realName/role/status
 
   Scenario: 角色权限控制
     Given 用户角色为 coach
@@ -623,12 +619,11 @@ Feature: 用户管理
 - RBAC 权限模型: 用户 → 角色 → 权限
 - 四种角色: admin (超级管理员), manager (管理员), coach (教练), volunteer (志愿者)
 - 权限注解: `@PreAuthorize("hasRole('admin')")`
-- 密码重置: 生成8位随机密码 (数字+字母)
 
 **涉及文件**:
 - `controller/admin/UserController.java`
 - `service/UserService.java`
-- `entity/SystemUser.java`, `Role.java`
+- `entity/SystemUser.java`
 - `config/SecurityConfig.java` - 权限配置
 
 **覆盖FR**: FR10.1, FR10.2
@@ -805,7 +800,7 @@ Feature: H5 训练营列表
 
 ### Story EP02-S02: 微信公众号 OAuth 集成
 
-**Story 描述**: 作为H5应用,我能够通过微信公众号OAuth获取用户OpenID,为后续支付做准备
+**Story 描述**: 作为H5应用,我能够通过微信公众号OAuth获取用户微信身份并建立会话票据,为后续报名与绑定做准备
 
 **Story 点数**: 5
 
@@ -814,34 +809,28 @@ Feature: H5 训练营列表
 **验收标准 (BDD)**:
 ```gherkin
 Feature: 微信 OAuth 登录
-  Scenario: 首次访问需要授权的页面
-    Given 用户未登录 (localStorage 无 JWT)
-    And 用户点击 "立即报名" 按钮
-    When 系统检查登录状态
-    Then 跳转微信授权页面 (snsapi_base)
+  Scenario: 获取微信授权地址
+    Given 用户点击 "立即报名" 按钮
+    When GET /api/auth/authorize?returnUrl={h5Url}
+    Then 返回 200 和 authorize_url
+    And 前端重定向到 authorize_url 完成授权
 
   Scenario: OAuth 回调处理
     Given 用户同意授权
-    When 微信回调 /api/h5/auth/callback?code=xxx
-    Then 后端用 code 换取 access_token 和 openid
-    And 创建/获取 wechat_user 记录
-    And 生成 JWT Token (30天有效)
-    And 重定向回原页面并携带 Token
-
-  Scenario: 已登录用户无需再次授权
-    Given localStorage 存在有效 JWT Token
-    When 用户访问需要认证的页面
-    Then 直接显示页面内容
+    When 微信回调 GET /api/auth/callback/wechat-mp?code=xxx&state=yyy
+    Then 后端用 code 换取 openid 并创建/获取 wechat_user
+    And 返回 access_token（格式 tk_ + UUID）和 need_bindPlanet 标记
+    And 前端保存 access_token 作为后续调用凭证
 ```
 
 **技术实现要点**:
-- 微信公众号 OAuth 2.0 (snsapi_base 静默授权)
-- 后端配置: WECHAT_MP_APPID, WECHAT_MP_SECRET
-- JWT Token 存储在 localStorage,有效期30天
-- 创建 wechat_user 表记录 openid 和用户信息
+- 微信公众号 OAuth 2.0（建议 snsapi_base 静默授权）
+- returnUrl 白名单校验与防开放重定向：见 `docs/v1/security/OAuth安全指南.md`
+- state 关联 returnUrl（Redis 5分钟过期），回调时读取并校验
+- OAuth 会话票据：`Authorization: Bearer {access_token}` 用于后续绑定星球账号（见接口文档）
 
 **涉及文件**:
-- `backend/controller/h5/AuthH5Controller.java` - /api/h5/auth/wechat, /api/h5/auth/callback
+- `backend/controller/auth/OAuthController.java` - /api/auth/authorize, /api/auth/callback/wechat-mp
 - `backend/service/WechatOAuthService.java`
 - `backend/manager/WechatOAuthManager.java`
 - `frontend/h5-member/src/utils/auth.ts`
@@ -896,7 +885,7 @@ Feature: 报名信息填写
 **涉及文件**:
 - `frontend/h5-member/src/views/CampDetail.vue`
 - `frontend/h5-member/src/views/BindPlanet.vue`
-- `backend/controller/h5/AuthH5Controller.java` - /api/h5/bind-planet
+- `backend/controller/auth/OAuthController.java` - POST /api/auth/bindPlanet
 - `backend/service/WechatUserService.java`
 
 **覆盖FR**: FR2.2, FR3.1
@@ -916,10 +905,15 @@ Feature: 报名信息填写
 Feature: 微信支付
   Scenario: 创建支付订单
     Given 用户已填写报名信息
-    When POST /api/h5/orders (包含 campId, wechatUserId)
-    Then 创建 payment_record 记录
-    And 调用微信统一下单接口
-    And 返回支付参数 (timeStamp, nonceStr, package, signType, paySign)
+    When POST /api/h5/orders (包含 campId, planetUserId, planetNickname, wechatNickname)
+    Then 创建 payment_record 记录 (pay_status=pending)
+    And 返回 orderNo
+    And 返回 payUrl=/api/h5/orders/{orderNo}/params
+
+  Scenario: 获取支付参数
+    Given 已创建支付订单并获得 orderNo
+    When GET /api/h5/orders/{orderNo}/params
+    Then 返回支付参数 (timeStamp, nonceStr, package, signType, paySign)
 
   Scenario: 调起微信支付
     Given 前端获取到支付参数
@@ -929,15 +923,14 @@ Feature: 微信支付
   Scenario: 重复报名检测
     Given 用户已对该训练营支付过
     When 再次创建订单
-    Then 返回 400 Bad Request
-    And 错误码为 1102 (ALREADY_ENROLLED)
-    And 返回已有订单信息
+    Then 返回错误码 1001
+    And 错误信息为 "您已报名该训练营，无需重复报名"
 ```
 
 **技术实现要点**:
 - 微信支付 V3 接口: /v3/pay/transactions/jsapi
-- 订单号格式: `ORD_YYYYMMDD_HHMMSS_随机6位`
-- attach 字段携带: `{campId, wechatUserId, bind_method: "h5_bindplanet"}`
+- 订单号格式: `ord_` + UUID（不可预测，防枚举）
+- attach 字段携带业务透传信息（如 campId 等）
 - 签名算法: SHA256withRSA
 - 金额单位转换: 元 → 分
 
@@ -968,7 +961,7 @@ Feature: 支付回调处理
     When 微信回调 POST /api/webhook/wechat/payment
     And attach 包含 wechat_user_id
     Then 验证签名成功
-    And 更新 payment_record.pay_status = paid
+    And 更新 payment_record.pay_status = success
     And 设置 bind_status = completed
     And 设置 bind_method = h5_bindplanet
     And 创建 camp_member 记录
@@ -978,7 +971,7 @@ Feature: 支付回调处理
     Given 用户通过固定二维码支付
     When 微信回调 POST /api/webhook/wechat/payment
     And attach 不包含 wechat_user_id
-    Then 更新 payment_record.pay_status = paid
+    Then 更新 payment_record.pay_status = success
     And 设置 bind_status = pending
     And 设置 bind_deadline = 当前时间 + 7天
     And 返回 SUCCESS
@@ -1026,7 +1019,7 @@ Feature: 群二维码展示
   Scenario: 支付成功显示群二维码
     Given 用户支付成功
     When 前端轮询 GET /api/h5/orders/{orderNo}/status
-    And pay_status = paid
+    And payStatus = success
     Then 跳转到群二维码页面
     And 显示训练营群二维码
     And 提示文案: "请长按保存并扫码进群"
@@ -1071,7 +1064,7 @@ Feature: 群二维码展示
 Feature: 用户填写绑定
   Scenario: 通过链接访问绑定页面
     Given 用户通过固定二维码支付
-    And 收到绑定链接 (包含 orderNo 和 accessToken)
+    And 通过订单状态查询获得 bindingUrl（包含 token 参数）
     When 访问绑定页面
     Then 验证 accessToken 有效
     And 显示绑定表单 (星球昵称、星球ID)
@@ -1094,8 +1087,8 @@ Feature: 用户填写绑定
 ```
 
 **技术实现要点**:
-- accessToken 格式: `tk_` + UUID (32位)
-- Redis 存储: `access_token:{token}` → Hash{orderNo, campId, status, expires_at}
+- accessToken 格式: `tk_` + UUID v4
+- Redis 存储: `access_token:{token}` → JSON{orderNo, campId, status(inactive/active/bound/expired), expireAt}
 - Token 有效期: 训练营结束日期 + 7天
 - 状态更新: pending → completed,记录到 payment_bind_status_log
 
@@ -1294,8 +1287,8 @@ Feature: 打卡数据定时同步
 **涉及文件**:
 - `backend/schedule/CheckinSyncTask.java`
 - `backend/service/CheckinService.java`
-- `backend/entity/CheckinSyncLog.java`
-- `backend/mapper/CheckinSyncLogMapper.java`
+- `backend/entity/SyncLog.java`
+- `backend/mapper/SyncLogMapper.java`
 
 **覆盖FR**: FR4.2, FR4.4, FR4.5
 
@@ -1314,24 +1307,24 @@ Feature: 打卡数据定时同步
 Feature: 手动触发同步
   Scenario: 管理员触发同步
     Given 管理员已登录
-    When POST /api/admin/camps/{campId}/sync-checkins
+    When POST /api/admin/checkins/sync/{campId}
     Then 立即执行打卡同步
-    And 返回同步结果 (成功/失败, 同步人数, 更新人数)
+    And 返回同步结果 (campId, syncTime, totalUsers, newCheckins, updatedMembers, duration)
 
   Scenario: 同步正在进行中
     Given 该训练营正在同步中
     When 再次触发同步
-    Then 返回 409 Conflict
-    And 提示 "同步正在进行中,请稍后再试"
+    Then 返回错误码 1201
+    And 提示 "同步进行中，请稍后再试"
 ```
 
 **技术实现要点**:
 - 复用 CheckinService.syncCheckins 方法
 - Redis 分布式锁防止并发
-- 返回 SyncResult (synced_count, updated_count, status)
+- 返回字段对齐接口文档（campId/syncTime/totalUsers/newCheckins/updatedMembers/duration）
 
 **涉及文件**:
-- `backend/controller/admin/CampController.java` - POST /api/admin/camps/{campId}/sync-checkins
+- `backend/controller/admin/CheckinController.java` - POST /api/admin/checkins/sync/{campId}
 - `backend/service/CheckinService.java` - syncCheckins
 
 **覆盖FR**: FR4.3
@@ -1390,7 +1383,7 @@ Feature: Token 过期告警
 Feature: H5 打卡进度查询
   Scenario: 查看打卡进度
     Given 用户已报名并支付
-    When 访问 /h5/progress/{campId}
+    When 访问 /progress
     Then 显示: 训练营信息卡片
     And 显示: 时间进度条 (已进行X天/共Y天)
     And 显示: 打卡统计 (已打卡X天/要求Y天)
@@ -1405,7 +1398,7 @@ Feature: H5 打卡进度查询
 ```
 
 **技术实现要点**:
-- 调用 GET /api/h5/progress/{memberId} (需 JWT Token)
+- 调用 GET /api/h5/progress/{memberId}（需 `X-Access-Token` 票据）
 - 显示打卡日历 (Vant Calendar 组件)
 - 进度条使用 Vant Progress 组件
 - 退款资格状态使用绿色/红色Tag区分
@@ -1451,7 +1444,7 @@ Feature: 管理后台打卡统计
 
 **涉及文件**:
 - `frontend/admin-web/src/views/camp/CheckinStats.vue`
-- `backend/controller/admin/CampController.java` - GET /api/admin/camps/{campId}/checkin-stats
+- `backend/controller/admin/CheckinController.java` - GET /api/admin/checkins/stats/{campId}
 - `backend/service/CheckinService.java` - getCampCheckinStats
 
 **覆盖FR**: FR8.3, FR8.4
@@ -1532,22 +1525,22 @@ Feature: 直接匹配
 ```gherkin
 Feature: 手动匹配
   Scenario: 查看待匹配列表
-    Given 存在 match_status = pending 的会员
-    When GET /api/admin/members?matchStatus=pending
-    Then 返回待匹配会员列表
-    And 包含: 填写的昵称、支付信息
+    Given 存在 bindStatus = manual_review 的会员
+    When GET /api/admin/members?bindStatus=manual_review&page=1&pageSize=20
+    Then 返回待处理会员列表
+    And 包含: 填写信息、支付信息、绑定状态
 
   Scenario: 管理员手动匹配
-    Given 管理员在待匹配列表
+    Given 管理员在待处理列表
     When 选择正确的星球用户
-    And POST /api/admin/members/{id}/match
-    Then match_status = matched
+    And POST /api/admin/members/{id}/match {"planetUserId": 501}
+    Then bind_status = completed
     And bind_method = manual
     And 记录操作日志
 ```
 
 **技术实现要点**:
-- 列表支持按 match_status 筛选
+- 列表支持按 bindStatus / keyword / eligibleForRefund 筛选（以接口文档为准）
 - 操作日志记录到 operation_log 表
 - 手动匹配后更新 camp_member.planet_member_number
 
@@ -1579,7 +1572,7 @@ Feature: 退款名单生成
     And 设置 audit_status = pending
 
   Scenario: 只处理已匹配的会员
-    Given 会员 match_status = unmatched
+    Given 会员 match_status IN (pending, failed)
     Then 不创建退款记录
     And 发送通知提醒管理员处理
 ```
@@ -1587,7 +1580,7 @@ Feature: 退款名单生成
 **技术实现要点**:
 - 定时任务: `@Scheduled(cron = "0 0 3 * * ?")`
 - 筛选条件: camp_member.eligible_for_refund = true AND match_status = matched
-- 创建 refund_record: audit_status = pending_audit
+- 创建 refund_record: audit_status = pending
 
 **涉及文件**:
 - `backend/schedule/RefundGenerateTask.java`
@@ -1611,8 +1604,8 @@ Feature: 退款名单生成
 ```gherkin
 Feature: 退款审核
   Scenario: 查看待审核列表
-    Given 存在 audit_status = pending_audit 的退款记录
-    When GET /api/admin/refunds?auditStatus=pending
+    Given 存在 audit_status = pending 的退款记录
+    When GET /api/admin/refunds/pending?page=1&pageSize=20
     Then 返回待审核列表
     And 包含: 会员信息、打卡完成情况、支付金额、绑定状态
 
@@ -1620,12 +1613,12 @@ Feature: 退款审核
     Given 管理员在审核列表
     When POST /api/admin/refunds/{id}/approve
     Then audit_status = approved
-    And refund_status = processing
+    And refund_status = pending
     And 记录审核人和审核时间
 
   Scenario: 批量审核通过
-    Given 选择多条退款记录 (ids)
-    When POST /api/admin/refunds/batch-review {ids, action: "approve"}
+    Given 选择多条退款记录 (refundIds)
+    When POST /api/admin/refunds/batch-approve {refundIds, requireBound=true}
     Then 批量更新状态为 approved
     And 返回处理结果 (成功X条, 失败Y条)
 
@@ -1633,13 +1626,14 @@ Feature: 退款审核
     Given 管理员决定拒绝退款
     When POST /api/admin/refunds/{id}/reject {reason}
     Then audit_status = rejected
+    And refund_status = rejected
     And 记录拒绝原因
 ```
 
 **技术实现要点**:
 - 审核列表支持分页和筛选
 - 批量审核需要二次确认
-- 状态流转: pending → approved/rejected (audit_status), processing → success/failed (refund_status)
+- 状态流转: pending → approved/rejected (audit_status)，pending → processing → success/failed (refund_status)
 - 记录到 refund_status_log
 
 **涉及文件**:
@@ -1663,11 +1657,14 @@ Feature: 退款审核
 ```gherkin
 Feature: 退款执行
   Scenario: 执行退款成功
-    Given refund_record.refund_status = processing
-    When 调用微信退款 API
-    Then 返回退款成功
+    Given refund_record.audit_status = approved
+    And refund_record.refund_status = pending
+    When 退款执行任务触发（异步/定时任务）
+    Then refund_status = processing
+    And 调用微信退款 API
+    And 收到退款成功回调
     And refund_status = success
-    And 记录微信退款流水号 (refund_id)
+    And 记录微信退款流水号 (wechatRefundId)
 
   Scenario: 退款失败自动重试
     Given 退款失败
@@ -1687,6 +1684,7 @@ Feature: 退款执行
 - 退款订单号格式: `REF_YYYYMMDD_HHMMSS_随机6位`
 - 重试策略: 指数退避 (5s, 10s, 20s)
 - 异步执行: 使用 @Async 或消息队列
+- 手动重试接口: POST /api/admin/refunds/{id}/retry（仅对 failed 状态生效，见接口文档）
 
 **涉及文件**:
 - `backend/service/RefundService.java` - executeRefund
@@ -1768,7 +1766,7 @@ Feature: 退款结果通知
 Feature: 会员列表
   Scenario: 查询会员列表
     Given 管理员已登录
-    When GET /api/admin/members?campId=1&bindStatus=completed&page=1
+    When GET /api/admin/members?campId=1&bindStatus=completed&page=1&pageSize=20
     Then 返回分页的会员列表
     And 包含: 星球昵称、星球ID、微信昵称、绑定状态、进群状态
 
@@ -1779,7 +1777,7 @@ Feature: 会员列表
 ```
 
 **技术实现要点**:
-- 多条件筛选: campId, bindStatus, joinedGroup, keyword
+- 多条件筛选: campId, bindStatus, keyword, eligibleForRefund
 - 模糊搜索使用 LIKE '%keyword%'
 - 返回会员完整信息 (使用 v_member_full_info 视图)
 
@@ -1843,10 +1841,10 @@ Feature: 人工绑定
   Scenario: 管理员手动绑定
     Given bind_status = manual_review 的会员
     When 管理员选择正确的星球用户
-    And POST /api/admin/members/{id}/manual-bind
+    And POST /api/admin/members/{id}/match {"planetUserId": 501}
     Then bind_status = completed
     And bind_method = manual
-    And 创建 camp_member 记录
+    And 建立 member 与 planet_user 的关联
 ```
 
 **技术实现要点**:
@@ -1855,7 +1853,7 @@ Feature: 人工绑定
 - 记录到 payment_bind_status_log
 
 **涉及文件**:
-- `backend/controller/admin/MemberController.java` - POST /api/admin/members/{id}/manual-bind
+- `backend/controller/admin/MemberController.java` - POST /api/admin/members/{id}/match
 - `backend/service/PaymentBindService.java` - manualBind
 
 **覆盖FR**: FR7.3, FR3.4
@@ -1883,7 +1881,7 @@ Feature: 进群提醒
 
 **技术实现要点**:
 - 定时任务: `@Scheduled(cron = "0 0 10 * * ?")`
-- 筛选条件: pay_status=paid AND joined_group=false AND pay_time < now-24h
+- 筛选条件: pay_status=success AND joined_group=false AND pay_time < now-24h
 - 提醒去重: 每个会员每24小时最多一次
 
 **涉及文件**:
@@ -2174,22 +2172,24 @@ Feature: 异常处理
 
 ## 核心状态流转图
 
-> **来源**: 从 `docs/v1/user-stories/EP02-EP05.md` 合并的状态流转图
-> **SSOT**: 状态枚举值定义见 [`docs/v1/design/状态枚举定义.md`](./v1/design/状态枚举定义.md)
+> **说明**: 以下图示用于快速对齐；枚举值与状态机以 SSOT 为准，详见 [`docs/v1/design/状态枚举定义.md`](./v1/design/状态枚举定义.md)
 
 ### 训练营状态 (camp_status)
 
 ```mermaid
 stateDiagram-v2
     [*] --> draft: 创建训练营
-    draft --> pending: 发布训练营
-    pending --> draft: 撤回发布
-    pending --> enrolling: 到达报名开始日期
-    enrolling --> ongoing: 到达训练营开始日期
-    ongoing --> ended: 到达训练营结束日期
+    draft --> pending: 编辑完成
+    pending --> enrolling: 管理员发布
+    enrolling --> ongoing: 到达开始日期(定时任务)
+    ongoing --> ended: 到达结束日期(定时任务)
     ended --> settling: 管理员触发结算
-    settling --> archived: 所有退款处理完成
+    settling --> archived: 退款完成
     archived --> [*]
+
+    draft --> draft: 编辑中
+    pending --> draft: 撤回修改
+    enrolling --> enrolling: 报名中
 ```
 
 ### 支付绑定状态 (bind_status)
@@ -2227,11 +2227,11 @@ stateDiagram-v2
 
 ```mermaid
 stateDiagram-v2
-    [*] --> inactive: 创建票据
-    inactive --> active: 用户访问绑定页面
-    active --> bound: 完成绑定
+    [*] --> inactive: 创建订单
+    inactive --> active: 支付成功
+    active --> bound: 绑定完成
     active --> expired: 超过有效期
-    bound --> [*]
+    bound --> expired: 超过有效期
     expired --> [*]
 ```
 
@@ -2247,15 +2247,15 @@ stateDiagram-v2
 
 **决策**: 使用 accessToken 而非 JWT。
 
-**格式**: `tk_` + UUID (32位)
+**格式**: `tk_` + UUID v4
 
-**存储**: Redis Hash `access_token:{token}` → `{orderNo, campId, status, expires_at}`
+**存储**: Redis `access_token:{token}` → JSON `{orderNo, campId, wechatUserId, status(inactive/active/bound/expired), expireAt}`
 
 **原因**:
-1. 临时性 - 只用于完成一次绑定操作
-2. 无需携带用户身份信息
-3. 可以精确控制有效期（训练营结束 + 7天）
-4. 一次性使用后失效
+1. 防订单号枚举/抢绑定：敏感H5接口要求 `X-Access-Token`（见 `docs/v1/security/支付安全增强方案.md`）
+2. 覆盖未登录场景：无需用户登录也可安全完成绑定与查询
+3. 有效期可控：覆盖训练营周期（结束 + 7天）
+4. 绑定幂等：绑定成功后仍可用于查询群二维码与进度（状态 `bound`）
 
 ### 决策2: 移除智能匹配方案
 
@@ -2281,8 +2281,8 @@ stateDiagram-v2
 **背景**: 退款需要管理员审核后才能执行。
 
 **决策**:
-- 审核操作: pending → approved/rejected
-- 执行操作: approved → processing → success/failed
+- 审核字段 `audit_status`: pending → approved/rejected
+- 执行字段 `refund_status`: pending → processing → success/failed（审核拒绝时 `refund_status`=rejected）
 
 **原因**:
 1. 分离职责，审核和执行可以不同时进行
@@ -2309,45 +2309,47 @@ stateDiagram-v2
 
 ### 核心业务接口
 
+> **说明**: 完整端点清单与字段定义以 `docs/v1/api/接口文档.md` 为准；本文仅列出主流程关键端点，避免重复维护导致漂移。
+
 | 模块 | 接口 | 方法 | 说明 |
 |------|------|------|------|
-| **训练营** | `/api/admin/camps` | POST | 创建训练营 |
-| | `/api/admin/camps/{id}/publish` | POST | 发布训练营 |
-| | `/api/admin/camps/{id}/withdraw` | POST | 撤回发布 |
-| | `/api/admin/camps/{id}/start-settlement` | POST | 触发结算 |
-| | `/api/admin/camps/{id}/archive` | POST | 归档训练营 |
-| **会员报名** | `/api/h5/camps` | GET | H5训练营列表 |
-| | `/api/h5/auth/wechat` | GET | 微信OAuth跳转 |
-| | `/api/h5/auth/callback` | GET | OAuth回调 |
-| | `/api/h5/orders` | POST | 创建支付订单 |
-| | `/api/h5/orders/{orderNo}/bind-planet` | POST | 降级路径绑定 |
+| **H5训练营** | `/api/h5/camps` | GET | 列表 |
+| | `/api/h5/camps/{id}` | GET | 详情 |
+| **H5支付** | `/api/h5/orders` | POST | 创建订单 |
+| | `/api/h5/orders/{orderNo}/params` | GET | 获取支付参数 |
+| | `/api/h5/orders/{orderNo}/status` | GET | 查询支付状态（成功返回 accessToken） |
+| **H5绑定/查询** | `/api/h5/orders/{orderNo}/bind-planet` | POST | 用户填写绑定（票据） |
+| | `/api/h5/orders/{orderNo}/qrcode` | GET | 获取群二维码（票据） |
+| | `/api/h5/progress/{memberId}` | GET | 查询打卡进度（票据） |
+| **OAuth** | `/api/auth/authorize` | GET | 获取授权地址 |
+| | `/api/auth/callback/wechat-mp` | GET | OAuth回调 |
+| | `/api/auth/bindPlanet` | POST | 绑定知识星球账号 |
+| **后台打卡** | `/api/admin/checkins/sync/{campId}` | POST | 手动同步 |
+| | `/api/admin/checkins/stats/{campId}` | GET | 打卡统计 |
+| **后台退款** | `/api/admin/refunds/pending` | GET | 待审核列表 |
+| | `/api/admin/refunds/{id}/approve` | POST | 审核通过 |
+| | `/api/admin/refunds/{id}/reject` | POST | 审核拒绝 |
+| | `/api/admin/refunds/batch-approve` | POST | 批量审核 |
+| | `/api/admin/refunds/{id}/retry` | POST | 重试退款 |
 | **Webhook** | `/api/webhook/wechat/payment` | POST | 支付回调 |
-| **打卡同步** | `/api/admin/camps/{id}/sync-checkins` | POST | 手动触发同步 |
-| **退款审核** | `/api/admin/camps/{id}/refund-list` | POST | 生成退款名单 |
-| | `/api/admin/refunds/batch-review` | POST | 批量审核 |
-| | `/api/admin/refunds/{id}/execute` | POST | 执行退款 |
+| | `/api/webhook/wechat/refund` | POST | 退款回调 |
+
+> **注意**: 训练营撤回发布/触发结算/归档等接口在状态枚举与用户故事中存在，但未出现在 `docs/v1/api/接口文档.md` v1.1 的接口清单中；如需实现，需先补齐接口文档并统一路径/响应。
 
 ### 接口响应格式
 
 ```json
 {
   "code": 200,
-  "message": "success",
+  "message": "成功",
   "data": { ... },
-  "timestamp": 1702468800000
+  "timestamp": 1730000000
 }
 ```
 
-### 错误码规范
+### 错误码
 
-| 错误码 | 说明 |
-|--------|------|
-| 1101 | 训练营不存在 |
-| 1102 | 会员已报名 (ALREADY_ENROLLED) |
-| 1103 | 训练营已结束 |
-| 1301 | 未授权 |
-| 1302 | Token过期 (TOKEN_EXPIRED) |
-| 1303 | 无权限 (NO_PERMISSION) |
+见 [`docs/v1/api/接口文档.md`](./v1/api/接口文档.md) 的「十四、错误码说明」。
 
 ---
 

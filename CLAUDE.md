@@ -25,11 +25,49 @@ PostgreSQL + Redis + 腾讯云COS
 
 ### 数据库设计
 
-16张表，详见 `docs/v1/design/数据库设计.md`:
-- 核心业务表: `training_camp`, `camp_member`, `payment_record`, `refund_record`
-- 状态日志表: 5张 `*_status_log` 表记录关键变更
+19张表，详见 `docs/v1/design/数据库设计.md`:
+
+**核心业务表**:
+- `system_user` - 系统用户(管理员/教练/志愿者)
+- `training_camp` - 训练营信息
+- `camp_member` - 训练营会员关系
+- `camp_member_relation` - 会员关联信息
+- `planet_user` - 知识星球用户信息
+- `wechat_user` - 企业微信用户信息
+- `payment_record` - 支付记录
+- `checkin_record` - 打卡记录
+- `refund_record` - 退款记录
+
+**管理和日志表**:
+- `operation_log`, `system_config`, `notification_message`
+- `planet_user_import_log`, `sync_log`
+- 5张状态日志表: `*_status_log` (记录关键状态变更)
+
+**初始化脚本**: `scripts/init-database.sql`
+
+## 项目状态
+
+| 组件 | 状态 | 说明 |
+|------|------|------|
+| **数据库** | ✅ 已完成 | 19张表, 初始化脚本 `scripts/init-database.sql` |
+| **v1 后端** | ⏳ 待创建 | Java 17 + Spring Boot 3.2 |
+| **v1 前端** | ⏳ 待创建 | Vue 3 (H5会员端 + Web管理后台) |
+| **v0 代码** | ⚠️ 已废弃 | `zsxq-api/`, `zsxq-web/` 仅供参考学习 |
 
 ## 常用命令
+
+### 数据库初始化
+
+```bash
+# 创建数据库
+createdb camp_db
+
+# 执行初始化脚本 (19张表 + 索引)
+psql -U postgres -d camp_db -f scripts/init-database.sql
+
+# 验证表结构
+psql -U postgres -d camp_db -c "\dt"
+```
 
 ### v1 后端 (backend/) - 待创建
 
@@ -39,20 +77,37 @@ cd backend
 ./gradlew test                                 # 运行所有测试
 ./gradlew test --tests "*.CampServiceTest"    # 运行单个测试类
 ./gradlew build                                # 构建项目
+./gradlew clean build                          # 清理并构建
 ```
 
 ### v1 前端 (frontend/) - 待创建
 
 ```bash
-cd frontend/h5-member && npm run dev    # H5会员端 http://localhost:5173
-cd frontend/admin-web && npm run dev    # Web管理后台 http://localhost:5174
+# H5会员端
+cd frontend/h5-member
+npm install
+npm run dev         # http://localhost:5173
+npm run build       # 生产环境构建
+npm run test        # 运行测试
+
+# Web管理后台
+cd frontend/admin-web
+npm install
+npm run dev         # http://localhost:5174
+npm run build       # 生产环境构建
+npm run test        # 运行测试
 ```
 
-### v0 后端 (zsxq-api/) - 仅供参考
+### v0 后端 (zsxq-api/) - 仅供参考，已废弃
 
 ```bash
-cd zsxq-api && npm install && npm run dev   # 开发模式 localhost:3013
-cd zsxq-api && npm test                      # 运行测试 (Jest)
+cd zsxq-api
+npm install
+npm run dev         # 开发模式 localhost:3013
+npm test            # 运行测试 (Jest)
+npm run lint        # 代码检查
+npm run format      # 代码格式化
+npm run pm2:start   # PM2 启动
 ```
 
 ### API 文档
@@ -158,7 +213,8 @@ com.yourcompany.camp/
 | `/test-backend` / `/test-frontend` | 运行测试 |
 | `/bug-add` / `/bug-search` | Bug 经验管理 |
 | `/review-file [path]` | 代码审查 |
-| `/commit` | 智能提交（自动生成 message） |
+| `/evaluate-next` | 评估下一个待评估文档并自动提交 |
+| `/evaluate-parallel` | 并行评估多个文档（使用子代理） |
 
 ### 上下文管理工作流
 
@@ -175,6 +231,44 @@ com.yourcompany.camp/
 1. **知识星球凭证会过期** - 定期从浏览器 DevTools 更新环境变量
 2. **PostgreSQL 15+** - 必须支持 JSONB 类型
 3. **v0 vs v1 代码隔离** - 绝不混用，v0 仅供学习参考
-4. **提交前检查**:
+4. **状态枚举 SSOT** - 所有状态值必须引用 `docs/v1/design/状态枚举定义.md`，该文档是单一数据源
+5. **提交前检查**:
    - v1 Java: `./gradlew test && ./gradlew build`
    - v1 前端: `npm run lint && npm run test`
+
+## v0 代码参考 (已废弃)
+
+虽然 v0 已废弃，但可作为理解业务逻辑的参考:
+
+### v0 后端结构 (zsxq-api/)
+```
+zsxq-api/
+├── src/
+│   ├── config/          # 配置 (Redis, Swagger)
+│   ├── middlewares/     # 中间件 (错误处理, 限流, 超时, 验证)
+│   ├── routes/          # 路由定义 (camps, users)
+│   ├── services/        # 业务逻辑 (refund, zsxq, user)
+│   └── utils/           # 工具类 (logger, response, sanitize, redis)
+├── __tests__/           # 测试 (Jest)
+│   ├── unit/            # 单元测试
+│   └── integration/     # 集成测试
+└── ecosystem.config.js  # PM2 配置
+```
+
+**参考价值**:
+- `services/zsxq.service.js` - 知识星球 API 调用示例
+- `services/refund.service.js` - 退款逻辑示例
+- `middlewares/` - 中间件模式可参考
+- `utils/logger.js` - 日志配置参考
+
+### v0 前端结构 (zsxq-web/)
+```
+zsxq-web/
+├── src/
+│   ├── views/          # 页面组件
+│   ├── components/     # 通用组件
+│   ├── router/         # 路由配置
+│   ├── utils/          # 工具函数
+│   └── main.js         # 入口文件
+└── vite.config.js      # Vite 配置
+```

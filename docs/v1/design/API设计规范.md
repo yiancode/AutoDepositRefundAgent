@@ -309,7 +309,7 @@ HTTP 401 Unauthorized
 公开接口（白名单）:
 - GET /api/h5/camps          （训练营列表）
 - GET /api/h5/camps/{id}     （训练营详情）
-- POST /api/h5/payments       （创建订单）
+- POST /api/h5/orders         （创建订单）
 - GET /api/auth/authorize     （OAuth授权）
 ```
 

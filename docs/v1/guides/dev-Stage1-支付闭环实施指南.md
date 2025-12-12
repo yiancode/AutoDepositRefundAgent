@@ -1,7 +1,7 @@
 # Stage 1：支付闭环（垂直切片）- 实施指南
 
-> **文档版本**: v1.1
-> **最后更新**: 2025-12-06
+> **文档版本**: v1.2
+> **最后更新**: 2025-12-12
 > **SSOT引用**: [状态枚举定义.md](../design/状态枚举定义.md) - bind_status、pay_status 等状态值定义
 
 > **优化依据**：《[优化完成总结](../archive/优化完成总结.md) - P1-1》垂直切片原则
@@ -74,7 +74,7 @@ CREATE TABLE wechat_user (
 - `支付安全增强方案.md`
 
 **交付物**：
-- `POST /api/h5/payments` - 创建订单
+- `POST /api/h5/orders` - 创建订单
 - `payment_record` 表CRUD
 - accessToken生成与Redis存储
 
@@ -82,7 +82,7 @@ CREATE TABLE wechat_user (
 ```markdown
 我需要实现创建支付订单接口，参考《EP02-会员报名与支付.md - S2.2》：
 
-【接口】POST /api/h5/payments
+【接口】POST /api/h5/orders
 【请求】
 {
   "campId": 1,
@@ -214,8 +214,8 @@ CREATE TABLE wechat_user (
   "orderNo": "ord_123",
   "payStatus": "SUCCESS",
   "bindStatus": "pending",
-  "remainingBindTime": 518400,  // 剩余6天（秒）
-  "bindingUrl": "/bind?token=tk_xxx"
+  "remainingBindTime": 518400,
+  "accessToken": "tk_xxx"
 }
 
 【响应示例（已完成）】
@@ -249,8 +249,9 @@ CREATE TABLE wechat_user (
    - 调用wx.chooseWXPay()唤起微信支付
    - 支付成功后轮询订单状态
 
-3. **绑定页面** (`/bind-planet` - Vue Router前端路由)
-   - 从URL查询参数获取 token（`?token=tk_xxx`）
+3. **绑定页面** (`/bind-planet?token=tk_xxx` - Vue Router前端路由)
+   - 从URL查询参数获取 token
+   - 根据token调用后端API获取订单信息
    - 确认或修改星球信息
    - 提交绑定请求（调用后端API: `POST /api/h5/orders/{orderNo}/bind-planet`）
    - 显示群二维码
@@ -258,7 +259,7 @@ CREATE TABLE wechat_user (
    > 📝 **路由说明**：
    > - **前端路由**: `/bind-planet?token=tk_xxx` (Vue Router，浏览器地址栏)
    > - **后端API**: `/api/h5/orders/{orderNo}/bind-planet` (Spring Boot接口)
-   > - token 用于鉴权和获取订单信息，无需在URL路径中暴露 orderNo
+   > - token 用于鉴权，orderNo 从token对应的订单信息中获取
 
 **技术栈**：
 - Vue 3 + Vite
@@ -272,7 +273,7 @@ CREATE TABLE wechat_user (
 【页面1】训练营详情页 CampDetail.vue
 - 调用 GET /api/h5/camps/{id}
 - 表单：星球ID、星球昵称
-- 点击报名 → POST /api/h5/payments → 跳转支付页
+- 点击报名 → POST /api/h5/orders → 跳转支付页
 
 【页面2】支付页面 Payment.vue
 - 调用 GET /api/h5/orders/{orderNo}/params 获取prepay_id
@@ -289,7 +290,7 @@ CREATE TABLE wechat_user (
 【路由配置】
 /camps/:id - 详情页
 /payment/:orderNo - 支付页
-/bind/:orderNo - 绑定页
+/bind-planet - 绑定页（通过?token=tk_xxx传递凭证）
 
 请生成完整代码。
 ```
@@ -400,6 +401,6 @@ Day 5: 联调 + 测试 + Bug修复
 
 ---
 
-**文档版本**：v1.0
-**最后更新**：2025-12-04
+**文档版本**：v1.2
+**最后更新**：2025-12-12
 **维护者**：技术架构组

@@ -375,7 +375,7 @@ sudo dnf install git -y
 | 表名 | 说明 |
 |------|------|
 | `system_user` | 系统用户（管理员/教练/志愿者） |
-| `system_config` | 系统配置（Cookie、API密钥等） |
+| `system_config` | 系统配置（Token、API密钥等） |
 | `operation_log` | 操作日志 |
 | `camp_member_relation` | 训练营人员关系（教练/志愿者） |
 
@@ -844,7 +844,7 @@ cloud:
 **用途**:
 - 发送打卡提醒
 - 发送退款通知
-- Cookie 过期告警
+- Token 过期告警
 
 **申请流程**:
 ```
@@ -1248,7 +1248,7 @@ management:
 | 数据库连接池使用率 | > 90% | 企业微信 |
 | 错误日志数量 | > 10/分钟 | 企业微信 |
 | 支付成功率 | < 95% | 企业微信 + 短信 |
-| 知识星球 Cookie 过期 | API 401/403 | 企业微信（紧急） |
+| 知识星球 Token 过期 | API 401/403 | 企业微信（紧急） |
 | 同步任务失败 | 连续失败 3 次 | 企业微信 |
 
 **告警通知示例**（企业微信）:
@@ -1326,14 +1326,14 @@ tail -f /var/log/camp/application.log
 
 **需要信息**:
 - 知识星球 Group ID
-- 知识星球 Cookie（zsxq_access_token）
+- 知识星球 Token（zsxq_access_token）
 
 **获取方式**:
 ```
 1. 浏览器登录知识星球
 2. 打开 DevTools → Network
 3. 刷新页面，找到 checkins 请求
-4. 复制 Request Headers 中的 Cookie
+4. 复制 Request Headers 中的 zsxq_access_token 值
 ```
 
 **配置到**:
@@ -1341,10 +1341,10 @@ tail -f /var/log/camp/application.log
 # application.yml（从 system_config 表读取）
 zsxq:
   group-id: 15555411412112
-  cookie: zsxq_access_token=xxx
+  token: ${ZSXQ_TOKEN}
 ```
 
-**注意**：Cookie 会过期，需要在 system_config 表中配置，支持热更新。
+**注意**：Token 会过期，需要在 system_config 表中配置，支持热更新。详见 [dev-zsxq-sdk集成指南](./dev-zsxq-sdk集成指南.md)。
 
 ---
 

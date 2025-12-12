@@ -137,8 +137,9 @@ backend/
 │   │   └── RefundStatus.java
 │   ├── manager/                      # 第三方API封装
 │   │   ├── WechatPayManager.java
-│   │   ├── PlanetApiManager.java
 │   │   └── WechatNotifyManager.java
+│   ├── config/                       # 配置类
+│   │   └── ZsxqSdkConfig.java        # zsxq-sdk 配置
 │   ├── schedule/                     # 定时任务
 │   └── util/
 
@@ -215,7 +216,7 @@ backend/
 2. 包含创建表、索引、注释
 3. 插入初始数据：
    - 默认管理员账号（admin/admin123，密码需 BCrypt 加密）
-   - 知识星球 Cookie 配置项
+   - 知识星球 Token 配置项（zsxq.token）
 
 【其他表创建计划】（不在 Stage 0 创建）：
 - Stage 1: payment_record, payment_bind_status_log, camp_status_log, operation_log
@@ -837,39 +838,43 @@ redisTemplate.opsForValue().set(
 
 ### 📦 任务拆分
 
-#### 任务 3.1：知识星球 API 封装
+#### 任务 3.1：知识星球 SDK 集成
 - **优先级**：P0
-- **预计时间**：4 小时
-- **交付物**：PlanetApiManager 类
+- **预计时间**：2 小时（SDK 已封装，只需配置）
+- **交付物**：ZsxqSdkConfig + CheckinSyncService
+- **参考文档**：[dev-zsxq-sdk集成指南.md](./dev-zsxq-sdk集成指南.md)
 - **验收标准**：
+  - ✅ ZsxqClient Bean 正确配置
   - ✅ 能成功获取打卡数据
-  - ✅ 支持自动翻页
-  - ✅ Cookie 过期能正常告警
+  - ✅ Token 过期能正常告警
 
 #### 🤖 AI 提示词（任务 3.1）
 
 ```markdown
-我需要封装知识星球 API，请帮我完成以下任务：
+我需要集成 zsxq-sdk 来获取知识星球打卡数据，请参考 docs/v1/guides/dev-zsxq-sdk集成指南.md 完成以下任务：
 
-【PlanetApiManager.java】（com.camp.manager）
+【ZsxqSdkConfig.java】（com.camp.config）
+1. 配置 ZsxqClient Bean
+2. 从 application.yml 读取 zsxq.token 和 zsxq.group-id
 
-1. getCheckinRanking(groupId, checkinId) → 返回打卡排行榜
-   - 需自动翻页（每页 100 条，最多 200 人）
-   - 返回字段：user_id, name, checkin_count
+【application.yml 配置】
+```yaml
+zsxq:
+  token: ${ZSXQ_TOKEN:}
+  group-id: ${ZSXQ_GROUP_ID:}
+  timeout: 10000
+  retry-count: 3
+```
 
-2. validateCookie() → 验证 Cookie 是否有效
+【CheckinSyncService.java】（com.camp.service）
+1. 注入 ZsxqClient
+2. getCheckinRanking(groupId, checkinId) → 调用 zsxqClient.checkins().getRankingList()
+3. validateToken() → 调用 zsxqClient.users().self() 验证 Token
 
-【认证方式】
-- Header: Cookie: {zsxq_access_token}
-- 从 system_config 表读取配置
-
-【错误处理】（参考技术方案 5.2.8）
-- Cookie 过期（401/403）→ 发送企业微信通知给管理员
-- 网络异常 → 重试 1 次
-
-【数据解析】（参考技术方案 5.2.6）
-API 返回打卡天数，需应用宽限规则：
-实际打卡天数 = API返回天数 + GRACE_DAYS（默认1天）
+【异常处理】（参考集成指南 §5）
+- TokenExpiredException → 发送企业微信通知给管理员
+- RateLimitException → 等待后重试
+- NetworkException → 重试 3 次
 
 请生成完整的代码。
 ```
@@ -946,27 +951,36 @@ public void syncCheckinData() {
 
     for (CampMember member : members) {
         try {
-            // 1. 调用知识星球API查询用户打卡数据
-            ZsxqUserCheckin checkinData = zsxqApiService.getUserCheckin(
-                member.getPlanetUserId(),
-                member.getCampId()
-            );
+            // 1. 调用 zsxq-sdk 查询用户打卡数据
+            List<RankingItem> ranking = zsxqClient.checkins()
+                .getRankingList(groupId, checkinId, "accumulated");
 
-            if (checkinData == null) {
-                // 2. 星球ID无效，转入人工审核
+            // 2. 查找该用户的打卡记录
+            RankingItem userRanking = ranking.stream()
+                .filter(r -> r.getUser().getUserId().equals(member.getPlanetUserId()))
+                .findFirst()
+                .orElse(null);
+
+            if (userRanking == null) {
+                // 3. 星球ID无效，转入人工审核
                 handleInvalidPlanetUser(member, "星球ID无效或用户不存在");
                 continue;
             }
 
-            // 3. 正常同步打卡数据
-            member.setCheckinCount(checkinData.getCheckinDays());
+            // 4. 正常同步打卡数据
+            member.setCheckinCount(userRanking.getCount());
             member.setLastSyncTime(LocalDateTime.now());
             memberMapper.updateById(member);
 
             log.info("同步打卡成功: memberId={}, checkinCount={}",
-                member.getId(), checkinData.getCheckinDays());
+                member.getId(), userRanking.getCount());
 
-        } catch (ZsxqApiException e) {
+        } catch (TokenExpiredException e) {
+            // Token 过期，发送告警并停止同步
+            notificationService.sendAlert("知识星球 Token 已过期，打卡同步已暂停");
+            log.error("Token 过期，停止同步");
+            break;
+        } catch (ZsxqException e) {
             log.error("同步打卡数据失败: memberId={}, error={}",
                 member.getId(), e.getMessage());
         }

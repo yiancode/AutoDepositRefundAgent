@@ -1,7 +1,7 @@
 # OAuth 授权与支付绑定完整时序图
 
-> **文档版本**: v1.1
-> **最后更新**: 2025-12-06
+> **文档版本**: v1.2
+> **最后更新**: 2025-12-12
 > **SSOT引用**: [状态枚举定义.md](../design/状态枚举定义.md) - 时序中涉及的 bind_status、bind_method、accessToken 状态值
 > **文档目的**：详细描述从 OAuth 授权到支付、绑定星球账号的完整流程
 > **对应决策**：[优化完成总结](../archive/优化完成总结.md) P0-2（FastAuth 会员验证流程断层）和 P1-4（OAuth 绑定时序明确化）
@@ -21,12 +21,35 @@ sequenceDiagram
     participant Redis as Redis缓存
     participant DB as PostgreSQL
 
-    rect rgb(240, 248, 255)
-        Note over User,DB: 阶段1：OAuth 授权登录
+    rect rgb(245, 245, 245)
+        Note over User,DB: 阶段0：浏览训练营（公开，无需登录）
     end
 
-    User->>H5: 访问训练营详情页
-    H5->>API: GET /api/auth/authorize?returnUrl=/camps/1
+    User->>H5: 访问训练营列表页
+    H5->>API: GET /api/h5/camps
+    API->>DB: 查询训练营列表
+    DB-->>API: 返回训练营列表
+    API-->>H5: 返回训练营列表
+    H5-->>User: 显示训练营列表
+
+    User->>H5: 点击某个训练营
+    H5->>API: GET /api/h5/camps/{campId}
+    API->>DB: 查询训练营详情
+    DB-->>API: 返回训练营信息
+    API-->>H5: 返回训练营详情
+    H5-->>User: 显示训练营详情+报名按钮
+
+    User->>H5: 点击"立即报名"按钮
+    H5->>H5: 检查本地登录态（localStorage JWT）
+
+    alt 已登录（有有效JWT）
+        H5-->>User: 直接进入报名页面（跳至阶段2）
+    else 未登录（无JWT或已过期）
+        rect rgb(240, 248, 255)
+            Note over User,DB: 阶段1：OAuth 授权登录（仅未登录时触发）
+        end
+
+        H5->>API: GET /api/auth/authorize?returnUrl=/camps/{campId}/enroll
     API->>Redis: 生成state并存储（key=oauth:state:{state}, ttl=5分钟）
     API->>Redis: 存储returnUrl
     API->>API: 构造微信授权URL
@@ -55,6 +78,7 @@ sequenceDiagram
         API->>Redis: 删除state（已使用）
         API-->>H5: 302重定向到returnUrl + ?token=jwt_xxx
         H5->>H5: 保存JWT token到localStorage
+        end
     end
 
     rect rgb(255, 250, 240)
@@ -216,12 +240,25 @@ sequenceDiagram
 
 ## 关键流程说明
 
-### 1. OAuth 授权流程（步骤1-14）
+### 0. 浏览训练营流程（新增，步骤1-12）
 
 **核心要点**：
+- **公开访问**：训练营列表和详情页无需登录即可查看
+- **延迟授权**：仅在用户点击"立即报名"时才检查登录状态
+- **本地登录态**：JWT token 存储在 localStorage，支持页面刷新和跨页面保持
+
+**用户体验优化**：
+- 用户可先浏览所有训练营，了解内容后再决定是否报名
+- 已登录用户点击报名直接进入报名页面，无需重复授权
+- 符合用户习惯的"先看后买"流程
+
+### 1. OAuth 授权流程（步骤13-26，仅未登录时触发）
+
+**核心要点**：
+- **触发条件**：仅当用户点击报名且本地无有效JWT时触发
 - **state参数防CSRF**：每次授权生成唯一state，存入Redis（5分钟有效）
 - **code一次性使用**：微信回调后立即用code换取token，code失效
-- **JWT token生成**：包含wechatUserId和openid，有效期7天
+- **JWT token生成**：包含wechatUserId和openid，有效期30天
 - **wechat_user表维护**：首次授权创建，后续更新last_login
 
 **安全措施**：
@@ -493,5 +530,6 @@ CREATE UNIQUE INDEX uk_binding_wechat_planet ON user_planet_binding(wechat_user_
 **变更历史**：
 | 版本 | 日期 | 变更内容 |
 |------|------|----------|
+| v1.2 | 2025-12-12 | 新增阶段0（浏览训练营，公开无需登录）；调整阶段1触发条件为"点击报名按钮"而非"访问详情页"；对齐H5原型流程 |
 | v1.1 | 2025-12-06 | 添加 SSOT 引用；修复人工审核引用为人工审核；修复相关文档链接路径 |
 | v1.0 | 2025-12-04 | 初始版本 |

@@ -661,7 +661,7 @@
             font-weight: 500;
         }
 
-        .method-badge.dynamic-qrcode {
+        .method-badge.h5-bindplanet {
             background: rgba(63, 185, 80, 0.15);
             color: var(--accent-green);
         }
@@ -671,10 +671,7 @@
             color: var(--accent-blue);
         }
 
-        .method-badge.smart-match {
-            background: rgba(163, 113, 247, 0.15);
-            color: var(--accent-purple);
-        }
+        /* 移除smart-match，v1方案不再使用 */
 
         .method-badge.manual {
             background: rgba(210, 153, 34, 0.15);
@@ -2638,6 +2635,7 @@
                             <button class="btn btn-outline btn-sm" onclick="exportMemberList()">📥 导出</button>
                         </div>
                         <div class="card-body">
+                            <!-- 第一行筛选条件 -->
                             <div class="filters-bar">
                                 <div class="filter-group">
                                     <span class="filter-label">训练营：</span>
@@ -2662,16 +2660,63 @@
                                     <span class="filter-label">绑定方式：</span>
                                     <select class="filter-select" id="memberBindMethodFilter" onchange="filterMembers()">
                                         <option value="">全部</option>
-                                        <option value="dynamic_qrcode">动态二维码</option>
+                                        <option value="h5_bindplanet">H5绑定</option>
                                         <option value="user_fill">用户填写</option>
-                                        <option value="smart_match">智能匹配</option>
                                         <option value="manual">人工绑定</option>
                                     </select>
                                 </div>
                                 <div class="filter-group">
-                                    <input type="text" class="filter-input" placeholder="搜索星球昵称/ID..." id="memberSearchInput">
+                                    <span class="filter-label">打卡状态：</span>
+                                    <select class="filter-select" id="memberCheckinStatusFilter" onchange="filterMembers()">
+                                        <option value="">全部</option>
+                                        <option value="pending">待统计</option>
+                                        <option value="qualified">合格</option>
+                                        <option value="unqualified">不合格</option>
+                                    </select>
                                 </div>
-                                <button class="btn btn-outline btn-sm" onclick="filterMembers()">🔍 搜索</button>
+                            </div>
+                            <!-- 第二行筛选条件 -->
+                            <div class="filters-bar" style="margin-top: 12px;">
+                                <div class="filter-group">
+                                    <span class="filter-label">进群状态：</span>
+                                    <select class="filter-select" id="memberJoinedGroupFilter" onchange="filterMembers()">
+                                        <option value="">全部</option>
+                                        <option value="true">已进群</option>
+                                        <option value="false">未进群</option>
+                                    </select>
+                                </div>
+                                <div class="filter-group">
+                                    <span class="filter-label">退款资格：</span>
+                                    <select class="filter-select" id="memberRefundEligibleFilter" onchange="filterMembers()">
+                                        <option value="">全部</option>
+                                        <option value="true">符合条件</option>
+                                        <option value="false">不符合</option>
+                                    </select>
+                                </div>
+                                <div class="filter-group">
+                                    <span class="filter-label">全勤状态：</span>
+                                    <select class="filter-select" id="memberFullAttendanceFilter" onchange="filterMembers()">
+                                        <option value="">全部</option>
+                                        <option value="true">全勤</option>
+                                        <option value="false">非全勤</option>
+                                    </select>
+                                </div>
+                                <div class="filter-group">
+                                    <span class="filter-label">报名时间：</span>
+                                    <input type="date" class="filter-input" id="memberStartDate" style="width: 130px;">
+                                    <span style="color: var(--text-muted); margin: 0 4px;">至</span>
+                                    <input type="date" class="filter-input" id="memberEndDate" style="width: 130px;">
+                                </div>
+                            </div>
+                            <!-- 第三行：搜索框和操作按钮 -->
+                            <div class="filters-bar" style="margin-top: 12px;">
+                                <div class="filter-group">
+                                    <input type="text" class="filter-input" placeholder="搜索星球昵称/ID..." id="memberSearchInput" style="width: 200px;">
+                                </div>
+                                <div class="filter-group">
+                                    <input type="text" class="filter-input" placeholder="搜索微信昵称..." id="memberWechatSearchInput" style="width: 200px;">
+                                </div>
+                                <button class="btn btn-primary btn-sm" onclick="filterMembers()">🔍 搜索</button>
                                 <button class="btn btn-outline btn-sm" onclick="resetMemberFilters()">重置</button>
                             </div>
 
@@ -2695,7 +2740,7 @@
                                         <td>小球球</td>
                                         <td>21天早起训练营</td>
                                         <td><span class="status-badge bind-completed">● 已绑定</span></td>
-                                        <td><span class="method-badge dynamic-qrcode">📱 动态二维码</span></td>
+                                        <td><span class="method-badge h5-bindplanet">📱 H5绑定</span></td>
                                         <td>
                                             <div class="confidence high">
                                                 <span class="confidence-dot"></span>
@@ -2733,7 +2778,7 @@
                                         <td>小红</td>
                                         <td>21天早起训练营</td>
                                         <td><span class="status-badge bind-completed">● 已绑定</span></td>
-                                        <td><span class="method-badge smart-match">🤖 智能匹配</span></td>
+                                        <td><span class="method-badge user-fill">✏️ 用户填写</span></td>
                                         <td>
                                             <div class="confidence medium">
                                                 <span class="confidence-dot"></span>
@@ -3315,7 +3360,7 @@
                         <div class="card-header">
                             <h3 class="card-title">支付映射列表</h3>
                             <div class="card-actions">
-                                <button class="btn btn-primary btn-sm" onclick="runSmartMatch()">🔄 批量智能匹配</button>
+                                <button class="btn btn-primary btn-sm" onclick="runBatchBind()">🔄 批量处理</button>
                                 <button class="btn btn-outline btn-sm" onclick="exportPayments()">📊 导出</button>
                             </div>
                         </div>
@@ -3337,9 +3382,8 @@
                                 <label class="filter-label">绑定方式</label>
                                 <select class="filter-select" id="bindMethodFilter">
                                     <option value="">全部</option>
-                                    <option value="dynamic_qrcode">动态二维码</option>
+                                    <option value="h5_bindplanet">H5绑定</option>
                                     <option value="user_fill">用户填写</option>
-                                    <option value="smart_match">智能匹配</option>
                                     <option value="manual">人工绑定</option>
                                 </select>
                             </div>
@@ -3377,7 +3421,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <!-- 动态二维码绑定 - 已完成 -->
+                                    <!-- H5绑定 - 已完成 -->
                                     <tr>
                                         <td><input type="checkbox"></td>
                                         <td><code style="font-size: 11px;">CAMP_1730001_A1B2C3</code></td>
@@ -3385,7 +3429,7 @@
                                         <td>小明同学</td>
                                         <td>21天早起打卡</td>
                                         <td><span class="status-badge bind-completed">已绑定</span></td>
-                                        <td><span class="method-badge dynamic-qrcode">📱 动态二维码</span></td>
+                                        <td><span class="method-badge h5-bindplanet">📱 H5绑定</span></td>
                                         <td>-</td>
                                         <td>
                                             <div style="font-size: 12px;">小明同学</div>
@@ -3453,7 +3497,7 @@
                                             <button class="btn btn-warning btn-xs" onclick="manualBind(4)">手动绑定</button>
                                         </td>
                                     </tr>
-                                    <!-- 智能匹配绑定 -->
+                                    <!-- 用户填写绑定 -->
                                     <tr>
                                         <td><input type="checkbox"></td>
                                         <td><code style="font-size: 11px;">CAMP_1730005_M3N4O5</code></td>
@@ -3461,7 +3505,7 @@
                                         <td>早起的鸟儿</td>
                                         <td>21天早起打卡</td>
                                         <td><span class="status-badge bind-completed">已绑定</span></td>
-                                        <td><span class="method-badge smart-match">🤖 智能匹配</span></td>
+                                        <td><span class="method-badge user-fill">✏️ 用户填写</span></td>
                                         <td>-</td>
                                         <td>
                                             <div style="font-size: 12px;">早起鸟儿</div>
@@ -3472,7 +3516,7 @@
                                             <button class="btn btn-text btn-xs" onclick="viewPaymentDetail(5)">详情</button>
                                         </td>
                                     </tr>
-                                    <!-- 已过期 - 需要智能匹配 -->
+                                    <!-- 已过期 - 需要人工绑定 -->
                                     <tr style="background: rgba(248, 81, 73, 0.05);">
                                         <td><input type="checkbox"></td>
                                         <td><code style="font-size: 11px;">CAMP_1730006_P6Q7R8</code></td>
@@ -3487,11 +3531,11 @@
                                         <td><span style="color: var(--text-muted);">未绑定</span></td>
                                         <td>-</td>
                                         <td>
-                                            <button class="btn btn-primary btn-xs" onclick="smartMatchSingle(6)">智能匹配</button>
+                                            <button class="btn btn-primary btn-xs" onclick="manualBind(6)">人工绑定</button>
                                             <button class="btn btn-outline btn-xs" onclick="manualBind(6)">手动</button>
                                         </td>
                                     </tr>
-                                    <!-- 需人工处理 - 智能匹配失败 -->
+                                    <!-- 需人工处理 - 绑定异常 -->
                                     <tr style="background: rgba(163, 113, 247, 0.05);">
                                         <td><input type="checkbox"></td>
                                         <td><code style="font-size: 11px;">CAMP_1730007_S9T0U1</code></td>
@@ -3590,9 +3634,8 @@
                                         <span class="filter-label">绑定方式：</span>
                                         <select class="filter-select" id="refundBindMethodFilter" onchange="filterRefunds()">
                                             <option value="">全部</option>
-                                            <option value="dynamic_qrcode">动态二维码</option>
+                                            <option value="h5_bindplanet">H5绑定</option>
                                             <option value="user_fill">用户填写</option>
-                                            <option value="smart_match">智能匹配</option>
                                             <option value="manual">人工绑定</option>
                                         </select>
                                     </div>
@@ -3643,7 +3686,7 @@
                                                 <span style="color: var(--accent-green);">16/15 ✓</span>
                                             </td>
                                             <td style="color: var(--accent-orange); font-weight: 600;">¥99</td>
-                                            <td><span class="method-badge dynamic-qrcode">📱 动态二维码</span></td>
+                                            <td><span class="method-badge h5-bindplanet">📱 H5绑定</span></td>
                                             <td>
                                                 <div class="confidence high">
                                                     <span class="confidence-dot"></span>
@@ -3670,7 +3713,7 @@
                                                 <span style="color: var(--accent-green);">15/15 ✓</span>
                                             </td>
                                             <td style="color: var(--accent-orange); font-weight: 600;">¥99</td>
-                                            <td><span class="method-badge smart-match">🤖 智能匹配</span></td>
+                                            <td><span class="method-badge user-fill">✏️ 用户填写</span></td>
                                             <td>
                                                 <div class="confidence medium">
                                                     <span class="confidence-dot"></span>
@@ -3817,7 +3860,7 @@
                                                 <span style="color: var(--accent-green);">18/15 ✓</span>
                                             </td>
                                             <td style="color: var(--accent-green); font-weight: 600;">¥99</td>
-                                            <td><span class="method-badge dynamic-qrcode">📱 动态二维码</span></td>
+                                            <td><span class="method-badge h5-bindplanet">📱 H5绑定</span></td>
                                             <td>2025-01-14 10:30</td>
                                             <td>管理员</td>
                                             <td><span class="status-badge success">✓ 已退款</span></td>
@@ -3854,7 +3897,7 @@
                                                 <span style="color: var(--accent-red);">4/5 ✗</span>
                                             </td>
                                             <td style="color: var(--text-muted);">¥49</td>
-                                            <td><span class="method-badge smart-match">🤖 智能匹配</span></td>
+                                            <td><span class="method-badge user-fill">✏️ 用户填写</span></td>
                                             <td>2025-01-13 15:20</td>
                                             <td>教练A</td>
                                             <td><span class="status-badge rejected">✗ 已拒绝</span></td>
@@ -6854,8 +6897,16 @@
         // Reset member filters
         function resetMemberFilters() {
             document.getElementById('memberCampFilter').value = '';
-            document.getElementById('memberStatusFilter').value = '';
+            document.getElementById('memberBindStatusFilter').value = '';
+            document.getElementById('memberBindMethodFilter').value = '';
+            document.getElementById('memberCheckinStatusFilter').value = '';
+            document.getElementById('memberJoinedGroupFilter').value = '';
+            document.getElementById('memberRefundEligibleFilter').value = '';
+            document.getElementById('memberFullAttendanceFilter').value = '';
+            document.getElementById('memberStartDate').value = '';
+            document.getElementById('memberEndDate').value = '';
             document.getElementById('memberSearchInput').value = '';
+            document.getElementById('memberWechatSearchInput').value = '';
 
             // Show all rows
             const rows = document.querySelectorAll('#membersPage .data-table tbody tr');

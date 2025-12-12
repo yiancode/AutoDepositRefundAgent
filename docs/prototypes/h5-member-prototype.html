@@ -3,194 +3,432 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>知识星球训练营 - H5会员端原型</title>
+    <title>训练营押金退款 - H5会员端原型 (v1)</title>
     <style>
+        /* ============================================
+           CSS Variables - 对齐v1设计规范
+           参考: docs/v1/design/状态枚举定义.md
+           ============================================ */
+        :root {
+            --primary-color: #1890ff;
+            --primary-light: #40a9ff;
+            --success-color: #52c41a;
+            --warning-color: #faad14;
+            --danger-color: #ff4d4f;
+            --info-color: #17a2b8;
+            --purple-color: #722ed1;
+
+            --text-primary: #303133;
+            --text-regular: #606266;
+            --text-secondary: #909399;
+            --text-placeholder: #c0c4cc;
+
+            --bg-color: #f5f7fa;
+            --card-color: #ffffff;
+            --border-color: #e4e7ed;
+
+            --font-size-xl: 20px;
+            --font-size-lg: 16px;
+            --font-size-md: 14px;
+            --font-size-sm: 12px;
+
+            --radius-sm: 4px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --radius-xl: 16px;
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
 
-        :root {
-            --primary-color: #1989fa;
-            --success-color: #07c160;
-            --warning-color: #ff976a;
-            --danger-color: #ee0a24;
-            --text-primary: #323233;
-            --text-secondary: #646566;
-            --text-placeholder: #969799;
-            --bg-color: #f7f8fa;
-            --white: #ffffff;
-            --border-color: #ebedf0;
-        }
-
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
             background: var(--bg-color);
             color: var(--text-primary);
-            font-size: 14px;
-            line-height: 1.5;
+            font-size: var(--font-size-md);
+            line-height: 1.6;
         }
 
-        /* Mobile Frame */
-        .mobile-frame {
+        /* Mobile Container */
+        .mobile-container {
             max-width: 375px;
-            margin: 20px auto;
-            background: var(--white);
-            border-radius: 40px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            overflow: hidden;
+            margin: 0 auto;
+            min-height: 100vh;
+            background: var(--bg-color);
             position: relative;
         }
 
-        .mobile-notch {
-            width: 150px;
-            height: 30px;
-            background: #000;
-            border-radius: 0 0 20px 20px;
-            margin: 0 auto;
-            position: relative;
+        /* 原型切换导航 */
+        .prototype-nav {
+            background: #1a1a2e;
+            padding: 12px;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .prototype-nav button {
+            padding: 6px 12px;
+            border: 1px solid #4a4a6a;
+            background: transparent;
+            color: #a0a0c0;
+            border-radius: 16px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .prototype-nav button:hover {
+            background: #2a2a4e;
+            border-color: #6a6a9a;
+        }
+
+        .prototype-nav button.active {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+            color: white;
+        }
+
+        /* Header */
+        .header {
+            background: var(--card-color);
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 48px;
             z-index: 100;
         }
 
-        .mobile-screen {
-            height: 720px;
-            overflow-y: auto;
-            position: relative;
-            background: var(--bg-color);
-        }
-
-        /* Navigation Bar */
-        .nav-bar {
-            height: 44px;
-            background: var(--white);
+        .header-back {
+            width: 32px;
+            height: 32px;
             display: flex;
             align-items: center;
             justify-content: center;
-            position: sticky;
-            top: 0;
-            z-index: 50;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .nav-bar-title {
-            font-size: 17px;
-            font-weight: 600;
-            color: var(--text-primary);
-        }
-
-        .nav-bar-back {
-            position: absolute;
-            left: 16px;
             font-size: 20px;
             color: var(--text-primary);
             cursor: pointer;
         }
 
-        /* Page Container */
-        .page-container {
-            display: none;
-            min-height: 100%;
+        .header-title {
+            font-size: var(--font-size-lg);
+            font-weight: 600;
+            flex: 1;
+            text-align: center;
         }
 
-        .page-container.active {
+        .header-action {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        /* Page Container */
+        .page {
+            display: none;
+            padding-bottom: 80px;
+        }
+
+        .page.active {
             display: block;
         }
 
-        /* Tab Bar */
-        .tab-bar {
-            display: flex;
-            background: var(--white);
+        /* ============================================
+           Status Badges - 对齐v1状态枚举定义
+           SSOT: docs/v1/design/状态枚举定义.md
+           ============================================ */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: var(--font-size-sm);
+            font-weight: 500;
+        }
+
+        /* camp_status - 训练营状态 */
+        .status-badge.draft { background: #f0f0f0; color: #909399; }
+        .status-badge.pending { background: #fff7e6; color: #d48806; }
+        .status-badge.enrolling { background: #e6f7ff; color: #1890ff; }
+        .status-badge.ongoing { background: #f6ffed; color: #52c41a; }
+        .status-badge.ended { background: #f0f0f0; color: #909399; }
+        .status-badge.settling { background: #f9f0ff; color: #722ed1; }
+        .status-badge.archived { background: #fafafa; color: #bfbfbf; }
+        .status-badge.cancelled { background: #fff1f0; color: #ff4d4f; }
+
+        /* bind_status - 绑定状态 (对齐状态枚举定义.md) */
+        .status-badge.bind-pending { background: #fff7e6; color: #d48806; }
+        .status-badge.bind-completed { background: #f6ffed; color: #52c41a; }
+        .status-badge.bind-expired { background: #fff1f0; color: #ff4d4f; }
+        .status-badge.bind-manual-review { background: #f9f0ff; color: #722ed1; }
+        .status-badge.bind-closed { background: #fafafa; color: #bfbfbf; }
+
+        /* refund_status - 退款状态 (对齐状态枚举定义.md) */
+        .status-badge.refund-pending { background: #fff7e6; color: #d48806; }
+        .status-badge.refund-approved { background: #e6f7ff; color: #1890ff; }
+        .status-badge.refund-rejected { background: #fff1f0; color: #ff4d4f; }
+        .status-badge.refund-processing { background: #f9f0ff; color: #722ed1; }
+        .status-badge.refund-success { background: #f6ffed; color: #52c41a; }
+        .status-badge.refund-failed { background: #fff1f0; color: #ff4d4f; }
+
+        /* checkin_status - 打卡状态 (对齐状态枚举定义.md) */
+        .status-badge.checkin-not-started { background: #f0f0f0; color: #909399; }
+        .status-badge.checkin-ongoing { background: #e6f7ff; color: #1890ff; }
+        .status-badge.checkin-qualified { background: #f6ffed; color: #52c41a; }
+        .status-badge.checkin-unqualified { background: #fff1f0; color: #ff4d4f; }
+
+        /* bind_method - 绑定方式 (对齐状态枚举定义.md)
+           注: v1方案移除了 dynamic_qrcode 和 smart_match
+           仅保留: h5_bindplanet, user_fill, manual */
+        .method-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: var(--font-size-sm);
+        }
+        .method-badge.h5-bindplanet { background: #f6ffed; color: #52c41a; }
+        .method-badge.user-fill { background: #e6f7ff; color: #1890ff; }
+        .method-badge.manual { background: #fff7e6; color: #d48806; }
+
+        /* Card */
+        .card {
+            background: var(--card-color);
+            border-radius: var(--radius-lg);
+            padding: 16px;
+            margin: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        /* Button */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px 24px;
+            border-radius: var(--radius-md);
+            font-size: var(--font-size-md);
+            font-weight: 500;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: 100%;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-light);
+        }
+
+        .btn-success {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-regular);
+        }
+
+        .btn-text {
+            background: transparent;
+            color: var(--primary-color);
+            padding: 8px;
+        }
+
+        .btn-sm {
             padding: 8px 16px;
-            gap: 8px;
-            position: sticky;
-            top: 44px;
-            z-index: 40;
+            font-size: var(--font-size-sm);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Bottom Tab Bar */
+        .tab-bar {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 375px;
+            background: var(--card-color);
+            display: flex;
+            border-top: 1px solid var(--border-color);
+            padding: 8px 0;
+            padding-bottom: max(8px, env(safe-area-inset-bottom));
         }
 
         .tab-item {
             flex: 1;
-            padding: 8px 16px;
-            text-align: center;
-            font-size: 14px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            font-size: 10px;
             color: var(--text-secondary);
-            background: var(--bg-color);
-            border-radius: 20px;
             cursor: pointer;
-            transition: all 0.3s;
         }
 
         .tab-item.active {
-            background: var(--primary-color);
-            color: var(--white);
+            color: var(--primary-color);
         }
 
-        /* Camp Card */
-        .camp-list {
+        .tab-icon {
+            font-size: 22px;
+        }
+
+        /* Input */
+        .input-group {
+            margin-bottom: 16px;
+        }
+
+        .input-label {
+            display: block;
+            font-size: var(--font-size-sm);
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .input {
+            width: 100%;
             padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            font-size: var(--font-size-md);
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .input:focus {
+            border-color: var(--primary-color);
+        }
+
+        .input::placeholder {
+            color: var(--text-placeholder);
+        }
+
+        /* Progress Bar */
+        .progress-bar {
+            height: 8px;
+            background: var(--border-color);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-color), var(--success-color));
+            border-radius: 4px;
+            transition: width 0.3s;
+        }
+
+        .progress-fill.danger {
+            background: var(--danger-color);
+        }
+
+        .progress-fill.warning {
+            background: var(--warning-color);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 48px 24px;
+        }
+
+        .empty-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .empty-title {
+            font-size: var(--font-size-lg);
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .empty-desc {
+            font-size: var(--font-size-sm);
+            color: var(--text-secondary);
+        }
+
+        /* List Item */
+        .list-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .list-item:last-child {
+            border-bottom: none;
+        }
+
+        /* ============================================
+           PAGE 1: 训练营列表
+           路由: /camps
+           ============================================ */
+        .camp-list {
+            padding: 0 12px;
         }
 
         .camp-card {
-            background: var(--white);
-            border-radius: 12px;
+            background: var(--card-color);
+            border-radius: var(--radius-lg);
             margin-bottom: 12px;
             overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+            cursor: pointer;
         }
 
-        .camp-poster {
-            width: 100%;
-            height: 160px;
+        .camp-cover {
+            height: 140px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--white);
-            font-size: 24px;
+            align-items: flex-end;
+            padding: 16px;
             position: relative;
         }
 
-        .camp-poster.blue {
-            background: linear-gradient(135deg, #1989fa 0%, #0066cc 100%);
-        }
-
-        .camp-poster.green {
-            background: linear-gradient(135deg, #07c160 0%, #05a54c 100%);
-        }
-
-        .camp-poster.orange {
-            background: linear-gradient(135deg, #ff976a 0%, #ff6034 100%);
-        }
-
-        .camp-status {
+        .camp-cover-badge {
             position: absolute;
             top: 12px;
             right: 12px;
-            padding: 4px 10px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 500;
         }
 
-        .camp-status.ongoing {
-            background: rgba(7, 193, 96, 0.9);
-            color: var(--white);
-        }
-
-        .camp-status.upcoming {
-            background: rgba(25, 137, 250, 0.9);
-            color: var(--white);
+        .camp-cover-title {
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
 
         .camp-info {
             padding: 16px;
-        }
-
-        .camp-name {
-            font-size: 16px;
-            font-weight: 600;
-            color: var(--text-primary);
-            margin-bottom: 8px;
         }
 
         .camp-meta {
@@ -204,390 +442,608 @@
             display: flex;
             align-items: center;
             gap: 4px;
-            font-size: 13px;
+            font-size: var(--font-size-sm);
             color: var(--text-secondary);
         }
 
-        .camp-meta-item .icon {
-            font-size: 14px;
+        .camp-deposit {
+            display: flex;
+            align-items: baseline;
+            gap: 4px;
         }
 
-        .camp-price {
-            font-size: 20px;
+        .camp-deposit-label {
+            font-size: var(--font-size-sm);
+            color: var(--text-secondary);
+        }
+
+        .camp-deposit-amount {
+            font-size: 24px;
             font-weight: 700;
             color: var(--danger-color);
         }
 
-        .camp-price small {
-            font-size: 12px;
-            font-weight: 400;
-            color: var(--text-secondary);
+        .camp-deposit-unit {
+            font-size: var(--font-size-sm);
+            color: var(--danger-color);
         }
 
-        .camp-footer {
+        .camp-action {
             display: flex;
             align-items: center;
             justify-content: space-between;
+            margin-top: 12px;
             padding-top: 12px;
             border-top: 1px solid var(--border-color);
         }
 
-        .camp-enroll-count {
-            font-size: 13px;
+        .camp-slots {
+            font-size: var(--font-size-sm);
             color: var(--text-secondary);
         }
 
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 10px 24px;
-            border-radius: 22px;
-            font-size: 14px;
-            font-weight: 500;
-            border: none;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .btn-primary {
-            background: var(--primary-color);
-            color: var(--white);
-        }
-
-        .btn-primary:active {
-            background: #1579dc;
-        }
-
-        .btn-success {
-            background: var(--success-color);
-            color: var(--white);
-        }
-
-        .btn-block {
-            width: 100%;
-        }
-
-        .btn-large {
-            padding: 14px 0;
-            font-size: 16px;
-            border-radius: 8px;
-        }
-
-        .btn-disabled {
-            background: #c8c9cc;
-            color: var(--white);
-            pointer-events: none;
-        }
-
-        /* Form Styles */
-        .form-section {
-            background: var(--white);
-            margin: 12px;
-            border-radius: 12px;
-            overflow: hidden;
-        }
-
-        .form-section-title {
-            padding: 16px 16px 8px;
-            font-size: 13px;
-            color: var(--text-secondary);
-        }
-
-        .form-item {
-            display: flex;
-            align-items: center;
-            padding: 14px 16px;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .form-item:last-child {
-            border-bottom: none;
-        }
-
-        .form-label {
-            width: 80px;
-            font-size: 14px;
-            color: var(--text-primary);
-            flex-shrink: 0;
-        }
-
-        .form-label.required::after {
-            content: '*';
-            color: var(--danger-color);
-            margin-left: 2px;
-        }
-
-        .form-input {
-            flex: 1;
-            border: none;
-            font-size: 14px;
-            color: var(--text-primary);
-            background: transparent;
-            text-align: right;
-        }
-
-        .form-input::placeholder {
-            color: var(--text-placeholder);
-        }
-
-        .form-input:focus {
-            outline: none;
-        }
-
-        .form-tip {
-            padding: 12px 16px;
-            font-size: 12px;
+        .camp-slots strong {
             color: var(--primary-color);
-            background: rgba(25, 137, 250, 0.08);
-            display: flex;
-            align-items: center;
-            gap: 6px;
         }
 
-        /* Info Card */
-        .info-card {
-            background: var(--white);
-            margin: 12px;
-            border-radius: 12px;
+        /* ============================================
+           PAGE 2: 训练营详情
+           路由: /camps/:id
+           ============================================ */
+        .detail-cover {
+            height: 200px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: flex-end;
+            padding: 20px;
+        }
+
+        .detail-title {
+            color: white;
+            font-size: 22px;
+            font-weight: 700;
+        }
+
+        .detail-section {
             padding: 16px;
-        }
-
-        .info-card-header {
-            display: flex;
-            gap: 12px;
-            padding-bottom: 12px;
-            border-bottom: 1px solid var(--border-color);
+            background: var(--card-color);
             margin-bottom: 12px;
         }
 
-        .info-card-poster {
-            width: 80px;
-            height: 80px;
-            border-radius: 8px;
-            background: linear-gradient(135deg, #1989fa 0%, #0066cc 100%);
+        .detail-section-title {
+            font-size: var(--font-size-lg);
+            font-weight: 600;
+            margin-bottom: 12px;
             display: flex;
             align-items: center;
-            justify-content: center;
-            color: var(--white);
-            font-size: 32px;
+            gap: 8px;
         }
 
-        .info-card-content {
-            flex: 1;
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border-color);
         }
 
-        .info-card-name {
-            font-size: 16px;
-            font-weight: 600;
-            color: var(--text-primary);
-            margin-bottom: 8px;
+        .detail-row:last-child {
+            border-bottom: none;
         }
 
-        .info-card-meta {
-            font-size: 13px;
+        .detail-label {
             color: var(--text-secondary);
-            line-height: 1.6;
+            font-size: var(--font-size-sm);
         }
 
-        /* Bottom Bar */
-        .bottom-bar {
+        .detail-value {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .detail-rules {
+            background: #fafafa;
+            border-radius: var(--radius-md);
+            padding: 12px;
+        }
+
+        .detail-rules li {
+            margin-bottom: 8px;
+            font-size: var(--font-size-sm);
+            color: var(--text-regular);
+        }
+
+        .detail-rules li:last-child {
+            margin-bottom: 0;
+        }
+
+        .detail-bottom {
             position: fixed;
             bottom: 0;
-            left: 0;
-            right: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
             max-width: 375px;
-            margin: 0 auto;
-            background: var(--white);
+            background: var(--card-color);
             padding: 12px 16px;
-            padding-bottom: calc(12px + env(safe-area-inset-bottom));
-            border-top: 1px solid var(--border-color);
+            padding-bottom: max(12px, env(safe-area-inset-bottom));
             display: flex;
             align-items: center;
-            gap: 16px;
+            justify-content: space-between;
+            border-top: 1px solid var(--border-color);
             z-index: 100;
         }
 
-        .bottom-bar-price {
+        .detail-price {
             font-size: 24px;
             font-weight: 700;
             color: var(--danger-color);
         }
 
-        .bottom-bar-price small {
-            font-size: 14px;
-            font-weight: 400;
+        .detail-btn {
+            width: auto;
+            padding: 12px 32px;
         }
 
-        .bottom-bar .btn {
-            flex: 1;
+        /* ============================================
+           PAGE 3: 报名页面
+           路由: /enroll/:campId
+           ============================================ */
+        .enroll-card {
+            background: var(--card-color);
+            margin: 12px;
+            border-radius: var(--radius-lg);
+            overflow: hidden;
         }
 
-        /* Success Page */
-        .success-content {
-            text-align: center;
-            padding: 40px 24px;
+        .enroll-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            color: white;
         }
 
-        .success-icon {
-            width: 80px;
-            height: 80px;
-            background: var(--success-color);
-            border-radius: 50%;
+        .enroll-camp-name {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .enroll-camp-desc {
+            font-size: var(--font-size-sm);
+            opacity: 0.8;
+        }
+
+        .enroll-body {
+            padding: 20px;
+        }
+
+        .enroll-info-row {
             display: flex;
+            justify-content: space-between;
             align-items: center;
-            justify-content: center;
-            margin: 0 auto 20px;
-            font-size: 40px;
-            color: var(--white);
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border-color);
         }
 
-        .success-title {
-            font-size: 20px;
+        .enroll-info-row:last-child {
+            border-bottom: none;
+        }
+
+        .enroll-amount {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--danger-color);
+        }
+
+        /* 星球ID获取引导 - v1新增 */
+        .planet-id-guide {
+            background: #f6f8fa;
+            border-radius: var(--radius-md);
+            padding: 12px;
+            margin-top: 8px;
+        }
+
+        .planet-id-guide-title {
+            font-size: var(--font-size-sm);
             font-weight: 600;
             color: var(--text-primary);
             margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
         }
 
-        .success-desc {
-            font-size: 14px;
+        .planet-id-guide-steps {
+            font-size: var(--font-size-sm);
+            color: var(--text-secondary);
+            padding-left: 16px;
+        }
+
+        .planet-id-guide-steps li {
+            margin-bottom: 4px;
+        }
+
+        .planet-id-guide-image {
+            background: #e8e8e8;
+            height: 120px;
+            border-radius: var(--radius-sm);
+            margin-top: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+            font-size: var(--font-size-sm);
+        }
+
+        .not-member-link {
+            text-align: center;
+            margin-top: 16px;
+        }
+
+        .not-member-link a {
+            color: var(--primary-color);
+            font-size: var(--font-size-sm);
+            text-decoration: none;
+        }
+
+        /* ============================================
+           PAGE 4: 支付页面
+           路由: /payment/:orderId
+           ============================================ */
+        .payment-card {
+            background: var(--card-color);
+            margin: 12px;
+            border-radius: var(--radius-lg);
+            padding: 20px;
+        }
+
+        .payment-amount {
+            text-align: center;
+            padding: 24px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .payment-amount-label {
+            font-size: var(--font-size-sm);
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .payment-amount-value {
+            font-size: 40px;
+            font-weight: 700;
+            color: var(--danger-color);
+        }
+
+        .payment-info {
+            padding: 16px 0;
+        }
+
+        .payment-method {
+            display: flex;
+            align-items: center;
+            padding: 16px;
+            background: #f6f8fa;
+            border-radius: var(--radius-md);
+            margin-top: 16px;
+        }
+
+        .payment-method-icon {
+            width: 40px;
+            height: 40px;
+            background: #07c160;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            margin-right: 12px;
+        }
+
+        .payment-method-name {
+            flex: 1;
+            font-weight: 500;
+        }
+
+        .payment-method-check {
+            color: var(--success-color);
+            font-size: 20px;
+        }
+
+        .payment-notice {
+            margin-top: 16px;
+            padding: 12px;
+            background: #fffbe6;
+            border-radius: var(--radius-md);
+            font-size: var(--font-size-sm);
+            color: #d48806;
+        }
+
+        /* ============================================
+           PAGE 5: 支付结果页 - v1优化
+           路由: /result/:orderId
+           ============================================ */
+        .result-container {
+            padding: 48px 24px;
+            text-align: center;
+        }
+
+        .result-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+        }
+
+        .result-icon.success { color: var(--success-color); }
+        .result-icon.pending { color: var(--warning-color); }
+        .result-icon.failed { color: var(--danger-color); }
+
+        .result-title {
+            font-size: var(--font-size-xl);
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .result-desc {
+            font-size: var(--font-size-md);
             color: var(--text-secondary);
             margin-bottom: 24px;
         }
 
-        .qrcode-container {
-            background: var(--white);
-            padding: 24px;
-            border-radius: 12px;
-            margin: 0 auto 24px;
-            max-width: 280px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        .result-card {
+            background: #f6f8fa;
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            margin: 24px 0;
+            text-align: left;
         }
 
-        .qrcode-image {
-            width: 200px;
-            height: 200px;
-            background: linear-gradient(45deg, #ddd 25%, transparent 25%),
-                        linear-gradient(-45deg, #ddd 25%, transparent 25%),
-                        linear-gradient(45deg, transparent 75%, #ddd 75%),
-                        linear-gradient(-45deg, transparent 75%, #ddd 75%);
-            background-size: 20px 20px;
-            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
-            margin: 0 auto;
+        .result-card-title {
+            font-size: var(--font-size-sm);
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+        }
+
+        .result-card-row {
             display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 14px;
-            color: var(--text-secondary);
-            border-radius: 8px;
+            justify-content: space-between;
+            padding: 8px 0;
         }
 
-        .qrcode-tip {
-            font-size: 13px;
+        /* 绑定引导卡片 - v1新增 */
+        .bind-guide-card {
+            background: linear-gradient(135deg, #e6f7ff 0%, #bae7ff 100%);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            margin: 24px 0;
+            text-align: center;
+        }
+
+        .bind-guide-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+
+        .bind-guide-title {
+            font-size: var(--font-size-lg);
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .bind-guide-desc {
+            font-size: var(--font-size-sm);
             color: var(--text-secondary);
+            margin-bottom: 16px;
+        }
+
+        .bind-guide-timer {
+            font-size: var(--font-size-sm);
+            color: var(--warning-color);
             margin-top: 12px;
         }
 
-        /* Progress Page */
-        .progress-header {
-            background: linear-gradient(135deg, #1989fa 0%, #0066cc 100%);
-            padding: 20px 16px;
-            color: var(--white);
+        /* ============================================
+           PAGE 6: 绑定星球页面 - v1新增
+           路由: /bind-planet
+           ============================================ */
+        .bind-planet-page {
+            padding: 20px;
         }
 
-        .progress-camp-name {
-            font-size: 18px;
-            font-weight: 600;
-            margin-bottom: 16px;
+        .bind-step {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 24px;
         }
 
-        .progress-time {
+        .bind-step-number {
+            width: 32px;
+            height: 32px;
+            background: var(--primary-color);
+            color: white;
+            border-radius: 50%;
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            font-size: 13px;
-            margin-bottom: 8px;
+            justify-content: center;
+            font-weight: 600;
+            margin-right: 12px;
+            flex-shrink: 0;
         }
 
-        .progress-bar-container {
-            background: rgba(255, 255, 255, 0.3);
-            border-radius: 10px;
-            height: 8px;
-            overflow: hidden;
+        .bind-step-number.completed {
+            background: var(--success-color);
         }
 
-        .progress-bar-fill {
-            height: 100%;
-            background: var(--white);
-            border-radius: 10px;
-            transition: width 0.3s;
+        .bind-step-number.pending {
+            background: var(--border-color);
+            color: var(--text-secondary);
         }
 
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 12px;
-            padding: 16px;
-            margin-top: -20px;
+        .bind-step-content {
+            flex: 1;
         }
 
-        .stat-item {
-            background: var(--white);
-            border-radius: 12px;
-            padding: 16px 12px;
+        .bind-step-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .bind-step-desc {
+            font-size: var(--font-size-sm);
+            color: var(--text-secondary);
+        }
+
+        .bind-qrcode {
+            background: white;
+            border-radius: var(--radius-lg);
+            padding: 24px;
             text-align: center;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            margin: 20px 0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
 
-        .stat-value {
-            font-size: 24px;
-            font-weight: 700;
-            color: var(--primary-color);
+        .bind-qrcode-img {
+            width: 200px;
+            height: 200px;
+            background: #f0f0f0;
+            margin: 0 auto 16px;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+            font-size: var(--font-size-sm);
+            flex-direction: column;
+            gap: 8px;
         }
 
-        .stat-value.success {
-            color: var(--success-color);
+        .bind-qrcode-tip {
+            font-size: var(--font-size-sm);
+            color: var(--text-secondary);
         }
 
-        .stat-value.warning {
+        .bind-ticket-info {
+            background: #fff7e6;
+            border-radius: var(--radius-md);
+            padding: 12px;
+            margin-top: 16px;
+            font-size: var(--font-size-sm);
+        }
+
+        .bind-ticket-info strong {
             color: var(--warning-color);
         }
 
-        .stat-label {
-            font-size: 12px;
-            color: var(--text-secondary);
-            margin-top: 4px;
+        .bind-expire-tip {
+            text-align: center;
+            font-size: var(--font-size-sm);
+            color: var(--warning-color);
+            margin-top: 16px;
         }
 
-        /* Checkin Calendar */
-        .calendar-section {
-            background: var(--white);
-            margin: 12px;
-            border-radius: 12px;
-            padding: 16px;
+        /* ============================================
+           PAGE 7: 打卡进度页 - v1优化
+           路由: /camps/:campId/progress
+           ============================================ */
+        .progress-header {
+            background: linear-gradient(135deg, #52c41a 0%, #95de64 100%);
+            padding: 24px 20px;
+            color: white;
+            text-align: center;
         }
 
-        .calendar-title {
-            font-size: 15px;
+        .progress-camp-name {
+            font-size: var(--font-size-lg);
             font-weight: 600;
-            color: var(--text-primary);
             margin-bottom: 16px;
         }
 
-        .calendar-header {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 4px;
-            margin-bottom: 8px;
+        .progress-stats {
+            display: flex;
+            justify-content: center;
+            gap: 32px;
         }
 
-        .calendar-header span {
+        .progress-stat {
             text-align: center;
-            font-size: 12px;
+        }
+
+        .progress-stat-value {
+            font-size: 32px;
+            font-weight: 700;
+        }
+
+        .progress-stat-label {
+            font-size: var(--font-size-sm);
+            opacity: 0.8;
+        }
+
+        .progress-bar-container {
+            padding: 20px;
+            background: var(--card-color);
+        }
+
+        .progress-bar-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: var(--font-size-sm);
             color: var(--text-secondary);
         }
 
-        .calendar-grid {
+        .progress-bar-large {
+            height: 16px;
+            background: var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .progress-bar-large .progress-fill {
+            height: 100%;
+        }
+
+        /* 打卡日历 */
+        .checkin-calendar {
+            background: var(--card-color);
+            margin: 12px;
+            border-radius: var(--radius-lg);
+            padding: 16px;
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .calendar-title {
+            font-weight: 600;
+        }
+
+        .calendar-nav {
+            display: flex;
+            gap: 8px;
+        }
+
+        .calendar-nav button {
+            width: 32px;
+            height: 32px;
+            border: 1px solid var(--border-color);
+            background: white;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+        }
+
+        .calendar-weekdays {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            text-align: center;
+            font-size: var(--font-size-sm);
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .calendar-days {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
             gap: 4px;
@@ -598,528 +1054,1535 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 13px;
-            border-radius: 8px;
-            background: var(--bg-color);
-            color: var(--text-secondary);
+            border-radius: 50%;
+            font-size: var(--font-size-sm);
+            position: relative;
         }
 
         .calendar-day.checked {
             background: var(--success-color);
-            color: var(--white);
+            color: white;
+        }
+
+        .calendar-day.checked::after {
+            content: '✓';
+            position: absolute;
+            font-size: 8px;
+            bottom: 2px;
         }
 
         .calendar-day.missed {
-            background: rgba(238, 10, 36, 0.1);
-            color: var(--danger-color);
+            background: var(--danger-color);
+            color: white;
+        }
+
+        .calendar-day.today {
+            border: 2px solid var(--primary-color);
         }
 
         .calendar-day.future {
-            background: transparent;
-            border: 1px dashed var(--border-color);
             color: var(--text-placeholder);
         }
 
-        .calendar-legend {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            margin-top: 16px;
-            font-size: 12px;
-            color: var(--text-secondary);
-        }
-
-        .calendar-legend-item {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .calendar-legend-dot {
-            width: 12px;
-            height: 12px;
-            border-radius: 4px;
-        }
-
-        .calendar-legend-dot.checked {
-            background: var(--success-color);
-        }
-
-        .calendar-legend-dot.missed {
-            background: rgba(238, 10, 36, 0.3);
-        }
-
-        .calendar-legend-dot.future {
-            border: 1px dashed var(--border-color);
-        }
-
-        /* Refund Status */
+        /* 退款状态卡片 - v1新增 */
         .refund-status-card {
-            background: var(--white);
+            background: var(--card-color);
             margin: 12px;
-            border-radius: 12px;
+            border-radius: var(--radius-lg);
             padding: 16px;
         }
 
         .refund-status-header {
             display: flex;
-            align-items: center;
             justify-content: space-between;
+            align-items: center;
             margin-bottom: 12px;
         }
 
         .refund-status-title {
-            font-size: 15px;
             font-weight: 600;
-            color: var(--text-primary);
         }
 
-        .refund-badge {
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 500;
-        }
-
-        .refund-badge.pending {
-            background: rgba(255, 151, 106, 0.15);
-            color: var(--warning-color);
-        }
-
-        .refund-badge.success {
-            background: rgba(7, 193, 96, 0.15);
+        .refund-amount {
+            font-size: 24px;
+            font-weight: 700;
             color: var(--success-color);
-        }
-
-        .refund-badge.processing {
-            background: rgba(25, 137, 250, 0.15);
-            color: var(--primary-color);
-        }
-
-        .refund-info {
-            display: flex;
-            justify-content: space-between;
-            padding: 12px 0;
-            border-top: 1px solid var(--border-color);
-        }
-
-        .refund-info-item {
             text-align: center;
+            padding: 16px 0;
+            border-top: 1px dashed var(--border-color);
+            border-bottom: 1px dashed var(--border-color);
+            margin: 12px 0;
         }
 
-        .refund-info-value {
-            font-size: 18px;
-            font-weight: 600;
-            color: var(--text-primary);
+        .refund-timeline {
+            padding: 12px 0;
         }
 
-        .refund-info-label {
-            font-size: 12px;
-            color: var(--text-secondary);
-            margin-top: 4px;
-        }
-
-        /* Rules Card */
-        .rules-card {
-            background: var(--white);
-            margin: 12px;
-            border-radius: 12px;
-            padding: 16px;
-        }
-
-        .rules-title {
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--text-primary);
-            margin-bottom: 12px;
-        }
-
-        .rules-list {
-            list-style: none;
-        }
-
-        .rules-list li {
-            font-size: 13px;
-            color: var(--text-secondary);
-            padding: 6px 0;
-            padding-left: 20px;
+        .refund-timeline-item {
+            display: flex;
+            gap: 12px;
+            padding-bottom: 16px;
             position: relative;
         }
 
-        .rules-list li::before {
-            content: '●';
+        .refund-timeline-item:not(:last-child)::before {
+            content: '';
             position: absolute;
-            left: 0;
-            color: var(--primary-color);
-            font-size: 8px;
+            left: 11px;
+            top: 24px;
+            bottom: 0;
+            width: 2px;
+            background: var(--border-color);
         }
 
-        /* Page Navigation Demo */
-        .page-demo-nav {
-            position: fixed;
-            top: 50%;
-            right: 20px;
-            transform: translateY(-50%);
-            background: #333;
-            padding: 16px;
-            border-radius: 12px;
-            z-index: 1000;
-        }
-
-        .page-demo-nav h4 {
-            color: #fff;
+        .refund-timeline-dot {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             font-size: 12px;
+            flex-shrink: 0;
+        }
+
+        .refund-timeline-dot.completed {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .refund-timeline-dot.current {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .refund-timeline-dot.pending {
+            background: var(--border-color);
+            color: var(--text-secondary);
+        }
+
+        .refund-timeline-content {
+            flex: 1;
+        }
+
+        .refund-timeline-title {
+            font-size: var(--font-size-md);
+            margin-bottom: 4px;
+        }
+
+        .refund-timeline-desc {
+            font-size: var(--font-size-sm);
+            color: var(--text-secondary);
+        }
+
+        /* ============================================
+           PAGE 8: 个人中心 - v1新增
+           路由: /profile
+           ============================================ */
+        .profile-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 32px 20px;
+            color: white;
+        }
+
+        .profile-avatar {
+            width: 72px;
+            height: 72px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 50%;
             margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
         }
 
-        .page-demo-nav button {
-            display: block;
-            width: 100%;
-            padding: 8px 16px;
-            margin-bottom: 8px;
-            background: #555;
-            border: none;
-            border-radius: 6px;
-            color: #fff;
-            font-size: 12px;
+        .profile-name {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .profile-id {
+            font-size: var(--font-size-sm);
+            opacity: 0.8;
+        }
+
+        .profile-menu {
+            background: var(--card-color);
+            margin: 12px;
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+        }
+
+        .profile-menu-item {
+            display: flex;
+            align-items: center;
+            padding: 16px;
+            border-bottom: 1px solid var(--border-color);
             cursor: pointer;
         }
 
-        .page-demo-nav button:hover {
-            background: #1989fa;
+        .profile-menu-item:last-child {
+            border-bottom: none;
         }
 
-        .page-demo-nav button.active {
-            background: #1989fa;
+        .profile-menu-icon {
+            width: 32px;
+            font-size: 20px;
         }
 
-        /* Spacer for bottom bar */
-        .bottom-spacer {
-            height: 80px;
+        .profile-menu-title {
+            flex: 1;
         }
+
+        .profile-menu-arrow {
+            color: var(--text-placeholder);
+        }
+
+        .profile-menu-badge {
+            background: var(--danger-color);
+            color: white;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            margin-right: 8px;
+        }
+
+        /* ============================================
+           PAGE 9: 退款记录 - v1新增
+           路由: /refunds
+           ============================================ */
+        .refund-list {
+            padding: 12px;
+        }
+
+        .refund-item {
+            background: var(--card-color);
+            border-radius: var(--radius-lg);
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+
+        .refund-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .refund-item-camp {
+            font-weight: 600;
+        }
+
+        .refund-item-body {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .refund-item-info {
+            font-size: var(--font-size-sm);
+            color: var(--text-secondary);
+        }
+
+        .refund-item-info div {
+            margin-bottom: 4px;
+        }
+
+        .refund-item-amount {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--success-color);
+        }
+
+        .refund-item-amount.pending {
+            color: var(--text-secondary);
+        }
+
+        /* ============================================
+           辅助样式
+           ============================================ */
+        .divider {
+            height: 8px;
+            background: var(--bg-color);
+        }
+
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        .mt-8 { margin-top: 8px; }
+        .mt-16 { margin-top: 16px; }
+        .mb-8 { margin-bottom: 8px; }
+        .mb-16 { margin-bottom: 16px; }
+        .p-16 { padding: 16px; }
+
+        .flex {
+            display: flex;
+            align-items: center;
+        }
+
+        .flex-between {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .gap-8 { gap: 8px; }
+        .gap-16 { gap: 16px; }
+
     </style>
 </head>
 <body>
-    <!-- Page Navigation Demo -->
-    <div class="page-demo-nav">
-        <h4>H5页面切换</h4>
-        <button onclick="showH5Page('list')" class="active">训练营列表</button>
-        <button onclick="showH5Page('enroll')">报名支付</button>
-        <button onclick="showH5Page('qrcode')">群二维码</button>
-        <button onclick="showH5Page('progress')">打卡进度</button>
+    <!-- 原型切换导航 -->
+    <nav class="prototype-nav">
+        <button class="active" onclick="showPage('camp-list')">1.训练营列表</button>
+        <button onclick="showPage('camp-detail')">2.训练营详情</button>
+        <button onclick="showPage('oauth-loading')">3.授权弹窗(未登录)</button>
+        <button onclick="showPage('enroll')">4a.报名(已是会员)</button>
+        <button onclick="showPage('enroll-non-member')">4b.报名(非会员)</button>
+        <button onclick="showPage('payment')">5.支付页面</button>
+        <button onclick="showPage('result-success')">6a.主路径成功</button>
+        <button onclick="showPage('result-failed')">6b.支付失败</button>
+        <button onclick="showPage('bind-planet')">7a.降级-填写绑定</button>
+        <button onclick="showPage('bind-success')">7b.降级-绑定成功</button>
+        <button onclick="showPage('progress')">打卡进度</button>
+        <button onclick="showPage('profile')">个人中心</button>
+        <button onclick="showPage('refund-list')">退款记录</button>
+        <!-- 登录态切换器（调试用） -->
+        <span style="margin-left: 16px; display: flex; align-items: center; gap: 6px;">
+            <span id="login-indicator" style="background: #ff4d4f; color: white; padding: 4px 8px; border-radius: 12px; font-size: 11px;">未登录</span>
+            <button onclick="toggleLogin()" style="background: #2a2a4e; border-color: #6a6a9a;">切换登录态</button>
+            <button onclick="simulateLoggedInUser()" style="background: #52c41a; border-color: #52c41a; color: white;">模拟已绑定用户</button>
+        </span>
+    </nav>
+
+    <!-- ============================================
+         授权弹窗（点击报名时未登录触发）
+         说明: 用户点击"报名"后，若本地无登录态则弹出此授权窗口
+         用户授权后设置登录态，然后进入报名页面
+         ============================================ -->
+    <div id="auth-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 3000; display: none; align-items: center; justify-content: center;">
+        <div style="background: white; border-radius: 16px; padding: 24px; margin: 20px; max-width: 320px; text-align: center; position: relative;">
+            <button onclick="hideModal('auth-modal')" style="position: absolute; top: 12px; right: 12px; background: none; border: none; font-size: 20px; cursor: pointer; color: #909399;">×</button>
+
+            <div style="font-size: 48px; margin-bottom: 16px;">🔐</div>
+            <div style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">需要微信授权</div>
+            <div style="font-size: 14px; color: #909399; margin-bottom: 24px;">报名训练营需要先授权登录</div>
+
+            <!-- 模拟微信授权确认框 -->
+            <div style="background: #f6f8fa; border-radius: 12px; padding: 16px; margin-bottom: 20px; text-align: left;">
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+                    <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px;">🏕️</div>
+                    <div>
+                        <div style="font-weight: 600; font-size: 14px;">训练营押金退款</div>
+                        <div style="font-size: 12px; color: #909399;">申请获取以下权限</div>
+                    </div>
+                </div>
+                <div style="font-size: 12px; color: #606266; padding-left: 8px;">
+                    <div style="margin-bottom: 4px;">✓ 获取你的公开信息（昵称、头像）</div>
+                    <div>✓ 获取你的微信OpenID</div>
+                </div>
+            </div>
+
+            <button class="btn btn-success" style="margin-bottom: 12px;" onclick="onAuthSuccess()">允许授权并报名</button>
+            <button class="btn btn-outline" onclick="hideModal('auth-modal')">取消</button>
+        </div>
     </div>
 
-    <!-- Mobile Frame -->
-    <div class="mobile-frame">
-        <div class="mobile-notch"></div>
-        <div class="mobile-screen">
-            <!-- Page 1: Camp List -->
-            <div class="page-container active" id="listPage">
-                <div class="nav-bar">
-                    <span class="nav-bar-title">知识星球训练营</span>
-                </div>
+    <div class="mobile-container">
+        <!-- ============================================
+             PAGE 0: OAuth授权弹窗（点击报名时未登录触发）
+             路由: /api/auth/authorize?returnUrl=/camps/1
+             说明: 用户点击"报名"后，若本地无登录态则弹出此授权页面
+             参考: OAuth绑定完整时序图.md 阶段1
+             流程变更: 用户先看详情，点击报名再检查登录态
+             ============================================ -->
+        <div class="page" id="page-oauth-loading">
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; background: #f5f7fa; padding: 20px;">
+                <div style="background: white; border-radius: 16px; padding: 32px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1); max-width: 320px; width: 100%;">
+                    <div style="font-size: 48px; margin-bottom: 16px;">🔐</div>
+                    <div style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">微信授权登录</div>
+                    <div style="font-size: 14px; color: #909399; margin-bottom: 24px;">正在跳转微信授权页面...</div>
 
-                <div class="tab-bar">
-                    <div class="tab-item active">进行中</div>
-                    <div class="tab-item">即将开始</div>
-                </div>
-
-                <div class="camp-list">
-                    <div class="camp-card" onclick="showH5Page('enroll')">
-                        <div class="camp-poster blue">
-                            <span>早起</span>
-                            <div class="camp-status ongoing">进行中</div>
+                    <!-- 模拟微信授权确认框 -->
+                    <div style="background: #f6f8fa; border-radius: 12px; padding: 16px; margin-bottom: 20px; text-align: left;">
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+                            <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px;">🏕️</div>
+                            <div>
+                                <div style="font-weight: 600; font-size: 14px;">训练营押金退款</div>
+                                <div style="font-size: 12px; color: #909399;">申请获取以下权限</div>
+                            </div>
                         </div>
-                        <div class="camp-info">
-                            <div class="camp-name">21天早起训练营</div>
-                            <div class="camp-meta">
-                                <div class="camp-meta-item">
-                                    <span class="icon">📅</span>
-                                    <span>01-01 ~ 01-21</span>
-                                </div>
-                                <div class="camp-meta-item">
-                                    <span class="icon">✅</span>
-                                    <span>21天15打卡</span>
-                                </div>
-                            </div>
-                            <div class="camp-footer">
-                                <div class="camp-price">
-                                    ¥99
-                                    <small>押金</small>
-                                </div>
-                                <div class="camp-enroll-count">已报名 156人</div>
-                            </div>
+                        <div style="font-size: 12px; color: #606266; padding-left: 8px;">
+                            <div style="margin-bottom: 4px;">✓ 获取你的公开信息（昵称、头像）</div>
+                            <div>✓ 获取你的微信OpenID</div>
                         </div>
                     </div>
 
-                    <div class="camp-card">
-                        <div class="camp-poster green">
-                            <span>读书</span>
-                            <div class="camp-status upcoming">即将开始</div>
+                    <button class="btn btn-success" style="margin-bottom: 12px;" onclick="onAuthSuccess(); showPage('enroll');">允许授权</button>
+                    <button class="btn btn-outline" onclick="alert('用户取消授权，返回详情页'); showPage('camp-detail');">拒绝</button>
+
+                    <div style="margin-top: 16px; font-size: 12px; color: #c0c4cc;">
+                        授权后将自动跳转到报名页面
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================
+             PAGE 1: 训练营列表（默认入口页）
+             路由: /camps
+             说明: 所有用户首先看到此页面，展示全部训练营
+             点击某个训练营进入详情页
+             ============================================ -->
+        <div class="page active" id="page-camp-list">
+            <header class="header">
+                <div class="header-back"></div>
+                <div class="header-title">训练营</div>
+                <div class="header-action">
+                    <span onclick="showPage('profile')" style="cursor: pointer;">👤</span>
+                </div>
+            </header>
+
+            <div class="camp-list" style="margin-top: 12px;">
+                <!-- 报名中状态 camp_status=enrolling -->
+                <div class="camp-card" onclick="showPage('camp-detail')">
+                    <div class="camp-cover" style="background: linear-gradient(135deg, #f5af19 0%, #f12711 100%);">
+                        <div class="camp-cover-badge">
+                            <span class="status-badge enrolling">报名中</span>
                         </div>
-                        <div class="camp-info">
-                            <div class="camp-name">7天读书打卡营</div>
-                            <div class="camp-meta">
-                                <div class="camp-meta-item">
-                                    <span class="icon">📅</span>
-                                    <span>01-15 ~ 01-22</span>
-                                </div>
-                                <div class="camp-meta-item">
-                                    <span class="icon">✅</span>
-                                    <span>7天5打卡</span>
-                                </div>
-                            </div>
-                            <div class="camp-footer">
-                                <div class="camp-price">
-                                    ¥49
-                                    <small>押金</small>
-                                </div>
-                                <div class="camp-enroll-count">已报名 89人</div>
-                            </div>
+                        <div class="camp-cover-title">21天早起打卡训练营</div>
+                    </div>
+                    <div class="camp-info">
+                        <div class="camp-meta">
+                            <div class="camp-meta-item">📅 2025-01-01 ~ 01-21</div>
+                            <div class="camp-meta-item">✅ 21天15打卡</div>
+                        </div>
+                        <div class="camp-deposit">
+                            <span class="camp-deposit-label">押金</span>
+                            <span class="camp-deposit-amount">99</span>
+                            <span class="camp-deposit-unit">元</span>
+                        </div>
+                        <div class="camp-action">
+                            <span class="camp-slots">已报名 <strong>156</strong>/200 人</span>
+                            <button class="btn btn-primary btn-sm" style="width: auto;" onclick="event.stopPropagation(); handleEnroll()">立即报名</button>
                         </div>
                     </div>
+                </div>
 
-                    <div class="camp-card">
-                        <div class="camp-poster orange">
-                            <span>健身</span>
-                            <div class="camp-status ongoing">进行中</div>
+                <!-- 进行中状态 camp_status=ongoing -->
+                <div class="camp-card" onclick="showPage('progress')">
+                    <div class="camp-cover" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
+                        <div class="camp-cover-badge">
+                            <span class="status-badge ongoing">进行中</span>
                         </div>
-                        <div class="camp-info">
-                            <div class="camp-name">30天健身打卡营</div>
-                            <div class="camp-meta">
-                                <div class="camp-meta-item">
-                                    <span class="icon">📅</span>
-                                    <span>01-01 ~ 01-30</span>
-                                </div>
-                                <div class="camp-meta-item">
-                                    <span class="icon">✅</span>
-                                    <span>30天20打卡</span>
-                                </div>
-                            </div>
-                            <div class="camp-footer">
-                                <div class="camp-price">
-                                    ¥199
-                                    <small>押金</small>
-                                </div>
-                                <div class="camp-enroll-count">已报名 234人</div>
-                            </div>
+                        <div class="camp-cover-title">30天阅读习惯养成营</div>
+                    </div>
+                    <div class="camp-info">
+                        <div class="camp-meta">
+                            <div class="camp-meta-item">📅 2024-12-15 ~ 2025-01-14</div>
+                            <div class="camp-meta-item">✅ 30天20打卡</div>
+                        </div>
+                        <div class="camp-deposit">
+                            <span class="camp-deposit-label">押金</span>
+                            <span class="camp-deposit-amount">199</span>
+                            <span class="camp-deposit-unit">元</span>
+                        </div>
+                        <div class="camp-action">
+                            <span class="camp-slots">已报名 <strong>89</strong>/100 人</span>
+                            <button class="btn btn-outline btn-sm" style="width: auto;">查看进度</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 结算中状态 camp_status=settling -->
+                <div class="camp-card" onclick="showPage('refund-list')">
+                    <div class="camp-cover" style="background: linear-gradient(135deg, #8e44ad 0%, #3498db 100%);">
+                        <div class="camp-cover-badge">
+                            <span class="status-badge settling">结算中</span>
+                        </div>
+                        <div class="camp-cover-title">14天冥想入门训练营</div>
+                    </div>
+                    <div class="camp-info">
+                        <div class="camp-meta">
+                            <div class="camp-meta-item">📅 2024-12-01 ~ 12-14</div>
+                            <div class="camp-meta-item">✅ 14天10打卡</div>
+                        </div>
+                        <div class="camp-action">
+                            <span style="font-size: 12px; color: var(--purple-color);">退款审核中...</span>
+                            <button class="btn btn-outline btn-sm" style="width: auto;">查看退款</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 已结束状态 camp_status=ended -->
+                <div class="camp-card">
+                    <div class="camp-cover" style="background: linear-gradient(135deg, #636e72 0%, #b2bec3 100%);">
+                        <div class="camp-cover-badge">
+                            <span class="status-badge ended">已结束</span>
+                        </div>
+                        <div class="camp-cover-title">7天写作训练营</div>
+                    </div>
+                    <div class="camp-info">
+                        <div class="camp-meta">
+                            <div class="camp-meta-item">📅 2024-11-20 ~ 11-27</div>
+                            <div class="camp-meta-item">✅ 7天5打卡</div>
+                        </div>
+                        <div class="camp-action">
+                            <span style="font-size: 12px; color: var(--text-secondary);">已归档</span>
+                            <button class="btn btn-outline btn-sm" style="width: auto;">查看详情</button>
                         </div>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <!-- Page 2: Enroll Form -->
-            <div class="page-container" id="enrollPage">
-                <div class="nav-bar">
-                    <span class="nav-bar-back" onclick="showH5Page('list')">‹</span>
-                    <span class="nav-bar-title">报名参加</span>
+        <!-- ============================================
+             PAGE 2: 训练营详情
+             路由: /camps/:id
+             说明: 从列表页点击进入，展示单个训练营的详细信息
+             点击"报名"时检查登录态：
+             - 已登录: 直接进入报名页面
+             - 未登录: 弹出授权提示
+             ============================================ -->
+        <div class="page" id="page-camp-detail">
+            <header class="header">
+                <div class="header-back" onclick="showPage('camp-list')">←</div>
+                <div class="header-title">训练营详情</div>
+                <div class="header-action">📤</div>
+            </header>
+
+            <div class="detail-cover">
+                <div class="detail-title">21天早起打卡训练营</div>
+            </div>
+
+            <div class="detail-section">
+                <div class="detail-section-title">📋 基本信息</div>
+                <div class="detail-row">
+                    <span class="detail-label">训练营时间</span>
+                    <span class="detail-value">2025-01-01 ~ 01-21</span>
                 </div>
+                <div class="detail-row">
+                    <span class="detail-label">打卡要求</span>
+                    <span class="detail-value">21天内完成15次打卡</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">报名截止</span>
+                    <span class="detail-value">2024-12-31 23:59</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">当前状态</span>
+                    <span class="status-badge enrolling">报名中</span>
+                </div>
+            </div>
 
-                <div class="info-card">
-                    <div class="info-card-header">
-                        <div class="info-card-poster">早起</div>
-                        <div class="info-card-content">
-                            <div class="info-card-name">21天早起训练营</div>
-                            <div class="info-card-meta">
-                                时间：01-01 ~ 01-21<br>
-                                要求：21天15打卡<br>
-                                押金：¥99
-                            </div>
+            <div class="detail-section">
+                <div class="detail-section-title">💰 押金与退款</div>
+                <div class="detail-row">
+                    <span class="detail-label">押金金额</span>
+                    <span class="detail-value" style="color: var(--danger-color); font-size: 18px;">¥99.00</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">退款条件</span>
+                    <span class="detail-value">完成15次打卡</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">退款时间</span>
+                    <span class="detail-value">训练营结束后7天内</span>
+                </div>
+            </div>
+
+            <div class="detail-section">
+                <div class="detail-section-title">📜 训练营规则</div>
+                <ul class="detail-rules">
+                    <li>每天早上6:00-9:00在知识星球完成打卡</li>
+                    <li>打卡内容需包含"早起"相关话题，至少50字</li>
+                    <li>训练营期间共21天，需完成至少15次有效打卡</li>
+                    <li>达标后押金将在结算期退还至原支付账户</li>
+                    <li>未达标押金将作为奖励金分配给达标学员</li>
+                </ul>
+            </div>
+
+            <div class="detail-section">
+                <div class="detail-section-title">👥 报名情况</div>
+                <div class="detail-row">
+                    <span class="detail-label">已报名人数</span>
+                    <span class="detail-value" style="color: var(--primary-color);">156人</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">剩余名额</span>
+                    <span class="detail-value">44人</span>
+                </div>
+                <div class="progress-bar" style="margin-top: 8px;">
+                    <div class="progress-fill" style="width: 78%;"></div>
+                </div>
+            </div>
+
+            <div style="height: 80px;"></div>
+
+            <div class="detail-bottom">
+                <div class="detail-price">¥99</div>
+                <button class="btn btn-primary detail-btn" onclick="handleEnroll()">立即报名</button>
+            </div>
+        </div>
+
+        <!-- ============================================
+             PAGE 3a: 报名页面（已是星球会员）
+             路由: /enroll/:campId
+             说明: 用户已是星球会员，直接填写星球ID
+             参考: 时序图.md 1.1 固定二维码报名流程
+             ============================================ -->
+        <div class="page" id="page-enroll">
+            <header class="header">
+                <div class="header-back" onclick="showPage('camp-detail')">←</div>
+                <div class="header-title">确认报名</div>
+                <div class="header-action"></div>
+            </header>
+
+            <div class="enroll-card">
+                <div class="enroll-header">
+                    <div class="enroll-camp-name">21天早起打卡训练营</div>
+                    <div class="enroll-camp-desc">2025-01-01 ~ 01-21 · 21天15打卡</div>
+                </div>
+                <div class="enroll-body">
+                    <div class="enroll-info-row">
+                        <span>押金金额</span>
+                        <span class="enroll-amount">¥99.00</span>
+                    </div>
+                    <div class="enroll-info-row">
+                        <span>达标条件</span>
+                        <span>完成15次打卡</span>
+                    </div>
+                    <div class="enroll-info-row">
+                        <span>退款方式</span>
+                        <span>原路退回</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="input-group">
+                    <label class="input-label">你的知识星球ID <span style="color: var(--danger-color);">*</span></label>
+                    <input type="text" class="input" placeholder="请输入你的星球ID（数字）" value="88455815" />
+
+                    <!-- 星球ID获取引导 -->
+                    <div class="planet-id-guide">
+                        <div class="planet-id-guide-title">
+                            ❓ 如何获取星球ID？
+                        </div>
+                        <ol class="planet-id-guide-steps">
+                            <li>打开知识星球App</li>
+                            <li>点击右下角"我的"</li>
+                            <li>点击头像进入个人主页</li>
+                            <li>复制页面显示的数字ID</li>
+                        </ol>
+                        <div class="planet-id-guide-image">
+                            [获取星球ID示意图]
                         </div>
                     </div>
                 </div>
 
-                <div class="form-section">
-                    <div class="form-section-title">请填写报名信息</div>
-                    <div class="form-item">
-                        <label class="form-label required">星球昵称</label>
-                        <input type="text" class="form-input" placeholder="请输入您的星球昵称">
+                <div class="input-group">
+                    <label class="input-label">你的星球昵称 <span style="color: var(--danger-color);">*</span></label>
+                    <input type="text" class="input" placeholder="请输入你的星球昵称" value="早起的鸟儿" />
+                </div>
+
+                <div class="not-member-link">
+                    <a href="#" onclick="showPage('enroll-non-member'); return false;">还没有加入知识星球？点击加入 →</a>
+                </div>
+            </div>
+
+            <div class="card">
+                <div style="display: flex; align-items: flex-start; gap: 8px;">
+                    <input type="checkbox" id="agree" style="margin-top: 4px;" checked />
+                    <label for="agree" style="font-size: 12px; color: var(--text-secondary);">
+                        我已阅读并同意<a href="#" style="color: var(--primary-color);">《训练营规则》</a>，
+                        理解押金退款条件，承诺按要求完成打卡
+                    </label>
+                </div>
+            </div>
+
+            <div style="padding: 16px;">
+                <button class="btn btn-primary" onclick="showPage('payment')">确认报名并支付 ¥99.00</button>
+            </div>
+        </div>
+
+        <!-- ============================================
+             PAGE 3b: 报名页面（非星球会员）
+             路由: /enroll/:campId
+             说明: 用户尚未加入知识星球，显示分销海报引导
+             参考: 时序图.md 1.2 非星球用户引导流程
+             ============================================ -->
+        <div class="page" id="page-enroll-non-member">
+            <header class="header">
+                <div class="header-back" onclick="showPage('camp-detail')">←</div>
+                <div class="header-title">确认报名</div>
+                <div class="header-action"></div>
+            </header>
+
+            <div class="enroll-card">
+                <div class="enroll-header">
+                    <div class="enroll-camp-name">21天早起打卡训练营</div>
+                    <div class="enroll-camp-desc">2025-01-01 ~ 01-21 · 21天15打卡</div>
+                </div>
+                <div class="enroll-body">
+                    <div class="enroll-info-row">
+                        <span>押金金额</span>
+                        <span class="enroll-amount">¥99.00</span>
                     </div>
-                    <div class="form-item">
-                        <label class="form-label required">星球ID</label>
-                        <input type="text" class="form-input" placeholder="请输入您的星球ID">
+                    <div class="enroll-info-row">
+                        <span>达标条件</span>
+                        <span>完成15次打卡</span>
                     </div>
-                    <div class="form-tip">
-                        <span>💡</span>
-                        <span>如何获取星球ID？打开知识星球App → 我的 → 右上角设置</span>
+                    <div class="enroll-info-row">
+                        <span>退款方式</span>
+                        <span>原路退回</span>
                     </div>
-                    <div class="form-item">
-                        <label class="form-label required">微信昵称</label>
-                        <input type="text" class="form-input" placeholder="请输入您的微信昵称">
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="input-group">
+                    <label class="input-label">你的知识星球ID <span style="color: var(--danger-color);">*</span></label>
+                    <input type="text" class="input" placeholder="请输入你的星球ID（数字）" />
+
+                    <!-- 星球ID获取引导 -->
+                    <div class="planet-id-guide">
+                        <div class="planet-id-guide-title">
+                            ❓ 如何获取星球ID？
+                        </div>
+                        <ol class="planet-id-guide-steps">
+                            <li>打开知识星球App</li>
+                            <li>点击右下角"我的"</li>
+                            <li>点击头像进入个人主页</li>
+                            <li>复制页面显示的数字ID</li>
+                        </ol>
+                        <div class="planet-id-guide-image">
+                            [获取星球ID示意图]
+                        </div>
                     </div>
                 </div>
 
-                <div class="rules-card">
-                    <div class="rules-title">退款规则说明</div>
-                    <ul class="rules-list">
-                        <li>完成打卡要求后自动退款</li>
-                        <li>项目结束后3个工作日内到账</li>
-                        <li>原路退回支付账户</li>
-                        <li>中途退出不退款</li>
-                    </ul>
+                <div class="input-group">
+                    <label class="input-label">你的星球昵称 <span style="color: var(--danger-color);">*</span></label>
+                    <input type="text" class="input" placeholder="请输入你的星球昵称" />
                 </div>
 
-                <div class="bottom-spacer"></div>
-
-                <div class="bottom-bar">
-                    <div class="bottom-bar-price">
-                        <small>押金</small> ¥99
-                    </div>
-                    <button class="btn btn-primary" onclick="showH5Page('qrcode')">
-                        支付押金
+                <!-- 非会员引导区域 - 突出显示 -->
+                <div style="background: linear-gradient(135deg, #fff7e6 0%, #fffbe6 100%); border: 2px dashed #faad14; border-radius: 12px; padding: 16px; margin-top: 16px; text-align: center;">
+                    <div style="font-size: 32px; margin-bottom: 8px;">🌟</div>
+                    <div style="font-weight: 600; color: #d48806; margin-bottom: 8px;">还没有加入知识星球？</div>
+                    <div style="font-size: 12px; color: #ad6800; margin-bottom: 12px;">需要先加入星球才能参与打卡训练营</div>
+                    <button class="btn btn-primary btn-sm" style="width: auto; background: #faad14; border-color: #faad14;" onclick="showModal('planet-join-modal')">
+                        扫码加入星球 →
                     </button>
                 </div>
             </div>
 
-            <!-- Page 3: QR Code -->
-            <div class="page-container" id="qrcodePage">
-                <div class="nav-bar">
-                    <span class="nav-bar-title">报名成功</span>
-                </div>
-
-                <div class="success-content">
-                    <div class="success-icon">✓</div>
-                    <div class="success-title">支付成功！</div>
-                    <div class="success-desc">恭喜您成功报名「21天早起训练营」</div>
-
-                    <div class="qrcode-container">
-                        <div class="qrcode-image">
-                            [群二维码]
-                        </div>
-                        <div class="qrcode-tip">请长按保存二维码，扫码加入训练营学习群</div>
-                    </div>
-
-                    <button class="btn btn-success btn-block btn-large" onclick="showH5Page('progress')">
-                        查看我的打卡进度
-                    </button>
+            <div class="card">
+                <div style="display: flex; align-items: flex-start; gap: 8px;">
+                    <input type="checkbox" id="agree2" style="margin-top: 4px;" />
+                    <label for="agree2" style="font-size: 12px; color: var(--text-secondary);">
+                        我已阅读并同意<a href="#" style="color: var(--primary-color);">《训练营规则》</a>，
+                        理解押金退款条件，承诺按要求完成打卡
+                    </label>
                 </div>
             </div>
 
-            <!-- Page 4: Progress -->
-            <div class="page-container" id="progressPage">
-                <div class="nav-bar">
-                    <span class="nav-bar-back" onclick="showH5Page('list')">‹</span>
-                    <span class="nav-bar-title">我的打卡进度</span>
-                </div>
+            <div style="padding: 16px;">
+                <button class="btn btn-primary" disabled style="opacity: 0.5;">请先加入星球并填写信息</button>
+            </div>
+        </div>
 
-                <div class="progress-header">
-                    <div class="progress-camp-name">21天早起训练营</div>
-                    <div class="progress-time">
-                        <span>已进行 15天</span>
-                        <span>共21天</span>
-                    </div>
-                    <div class="progress-bar-container">
-                        <div class="progress-bar-fill" style="width: 71%;"></div>
-                    </div>
-                </div>
+        <!-- ============================================
+             MODAL: 星球分销海报弹窗
+             参考: 时序图.md 1.2 非星球用户引导流程
+             ============================================ -->
+        <div id="planet-join-modal" class="modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 2000; display: none; align-items: center; justify-content: center;">
+            <div style="background: white; border-radius: 16px; padding: 24px; margin: 20px; max-width: 320px; text-align: center; position: relative;">
+                <button onclick="hideModal('planet-join-modal')" style="position: absolute; top: 12px; right: 12px; background: none; border: none; font-size: 20px; cursor: pointer; color: #909399;">×</button>
 
-                <div class="stats-grid">
-                    <div class="stat-item">
-                        <div class="stat-value success">16</div>
-                        <div class="stat-label">已打卡天数</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value">15</div>
-                        <div class="stat-label">要求天数</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value success">✓</div>
-                        <div class="stat-label">已达标</div>
+                <div style="font-size: 18px; font-weight: 600; margin-bottom: 16px;">加入知识星球</div>
+
+                <!-- 星球分销海报二维码 -->
+                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; padding: 20px; margin-bottom: 16px;">
+                    <div style="background: white; border-radius: 8px; padding: 16px;">
+                        <div style="width: 160px; height: 160px; background: #f0f0f0; margin: 0 auto; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 8px;">
+                            <div style="font-size: 48px;">📱</div>
+                            <div style="font-size: 11px; color: #909399;">[星球分销海报二维码]</div>
+                        </div>
+                        <div style="margin-top: 12px; font-size: 14px; font-weight: 600;">XXX的知识星球</div>
+                        <div style="font-size: 12px; color: #909399;">长按识别二维码加入</div>
                     </div>
                 </div>
 
-                <div class="calendar-section">
-                    <div class="calendar-title">打卡日历</div>
-                    <div class="calendar-header">
-                        <span>一</span>
-                        <span>二</span>
-                        <span>三</span>
-                        <span>四</span>
-                        <span>五</span>
-                        <span>六</span>
-                        <span>日</span>
+                <div style="background: #f6f8fa; border-radius: 8px; padding: 12px; text-align: left;">
+                    <div style="font-size: 12px; font-weight: 600; margin-bottom: 8px;">加入后如何获取星球ID？</div>
+                    <ol style="font-size: 11px; color: #606266; padding-left: 16px; margin: 0;">
+                        <li>打开知识星球App</li>
+                        <li>点击右下角"我的"</li>
+                        <li>点击头像进入个人主页</li>
+                        <li>复制页面显示的数字ID</li>
+                        <li>返回此页面填写</li>
+                    </ol>
+                </div>
+
+                <button class="btn btn-outline" style="margin-top: 16px;" onclick="hideModal('planet-join-modal'); showPage('enroll');">
+                    我已加入，返回填写信息
+                </button>
+            </div>
+        </div>
+
+        <!-- ============================================
+             PAGE 4: 支付页面
+             路由: /payment/:orderId
+             ============================================ -->
+        <div class="page" id="page-payment">
+            <header class="header">
+                <div class="header-back" onclick="showPage('enroll')">←</div>
+                <div class="header-title">支付押金</div>
+                <div class="header-action"></div>
+            </header>
+
+            <div class="payment-card">
+                <div class="payment-amount">
+                    <div class="payment-amount-label">支付金额</div>
+                    <div class="payment-amount-value">¥99.00</div>
+                </div>
+
+                <div class="payment-info">
+                    <div class="detail-row">
+                        <span class="detail-label">订单编号</span>
+                        <span class="detail-value">CAMP_1735123456_A1B2C3</span>
                     </div>
-                    <div class="calendar-grid">
-                        <div class="calendar-day checked">1</div>
-                        <div class="calendar-day checked">2</div>
-                        <div class="calendar-day missed">3</div>
-                        <div class="calendar-day checked">4</div>
-                        <div class="calendar-day checked">5</div>
-                        <div class="calendar-day checked">6</div>
-                        <div class="calendar-day checked">7</div>
-                        <div class="calendar-day checked">8</div>
-                        <div class="calendar-day checked">9</div>
-                        <div class="calendar-day missed">10</div>
-                        <div class="calendar-day checked">11</div>
-                        <div class="calendar-day checked">12</div>
-                        <div class="calendar-day checked">13</div>
-                        <div class="calendar-day checked">14</div>
-                        <div class="calendar-day checked">15</div>
-                        <div class="calendar-day future">16</div>
-                        <div class="calendar-day future">17</div>
-                        <div class="calendar-day future">18</div>
-                        <div class="calendar-day future">19</div>
-                        <div class="calendar-day future">20</div>
-                        <div class="calendar-day future">21</div>
+                    <div class="detail-row">
+                        <span class="detail-label">商品名称</span>
+                        <span class="detail-value">21天早起训练营押金</span>
                     </div>
-                    <div class="calendar-legend">
-                        <div class="calendar-legend-item">
-                            <div class="calendar-legend-dot checked"></div>
-                            <span>已打卡</span>
-                        </div>
-                        <div class="calendar-legend-item">
-                            <div class="calendar-legend-dot missed"></div>
-                            <span>未打卡</span>
-                        </div>
-                        <div class="calendar-legend-item">
-                            <div class="calendar-legend-dot future"></div>
-                            <span>未开始</span>
-                        </div>
+                    <div class="detail-row">
+                        <span class="detail-label">创建时间</span>
+                        <span class="detail-value">2024-12-25 14:30:00</span>
                     </div>
                 </div>
 
-                <div class="refund-status-card">
-                    <div class="refund-status-header">
-                        <div class="refund-status-title">退款状态</div>
-                        <div class="refund-badge processing">待审核</div>
+                <div class="payment-method">
+                    <div class="payment-method-icon">💬</div>
+                    <div class="payment-method-name">微信支付</div>
+                    <div class="payment-method-check">✓</div>
+                </div>
+
+                <div class="payment-notice">
+                    ⚠️ 支付完成后，请在48小时内完成星球账号绑定，逾期将无法参与退款
+                </div>
+            </div>
+
+            <div style="padding: 16px;">
+                <button class="btn btn-success" onclick="showPage('result-success')">确认支付 ¥99.00</button>
+            </div>
+        </div>
+
+        <!-- ============================================
+             PAGE 5: 报名成功页（主路径）
+             路由: /result/:orderId?status=success
+             说明: H5报名用户支付成功后直接显示群二维码
+             bind_status = completed, bind_method = h5_bindplanet
+             ============================================ -->
+        <div class="page" id="page-result-success">
+            <header class="header">
+                <div class="header-back"></div>
+                <div class="header-title">报名成功</div>
+                <div class="header-action"></div>
+            </header>
+
+            <div class="result-container">
+                <div class="result-icon success">✓</div>
+                <div class="result-title">报名成功!</div>
+                <div class="result-desc">恭喜您成功报名 21天早起打卡训练营</div>
+
+                <!-- 群二维码展示 -->
+                <div style="background: white; border-radius: 16px; padding: 24px; margin: 24px 0; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                    <div style="width: 200px; height: 200px; background: #f0f0f0; margin: 0 auto 16px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 8px;">
+                        <div style="font-size: 48px;">📱</div>
+                        <div style="font-size: 12px; color: var(--text-secondary);">[训练营群二维码]</div>
                     </div>
-                    <div class="refund-info">
-                        <div class="refund-info-item">
-                            <div class="refund-info-value">¥99</div>
-                            <div class="refund-info-label">押金金额</div>
-                        </div>
-                        <div class="refund-info-item">
-                            <div class="refund-info-value">16/15</div>
-                            <div class="refund-info-label">打卡天数</div>
-                        </div>
-                        <div class="refund-info-item">
-                            <div class="refund-info-value" style="color: var(--success-color);">符合</div>
-                            <div class="refund-info-label">退款条件</div>
-                        </div>
+                    <div style="text-align: center; font-size: 14px; color: var(--text-regular);">
+                        长按保存二维码，扫码加入训练营群
                     </div>
                 </div>
 
-                <div class="bottom-spacer"></div>
+                <div class="result-card">
+                    <div class="result-card-title">📋 您的报名信息</div>
+                    <div class="result-card-row">
+                        <span>星球昵称</span>
+                        <span>早起的鸟儿</span>
+                    </div>
+                    <div class="result-card-row">
+                        <span>星球ID</span>
+                        <span>88455815</span>
+                    </div>
+                    <div class="result-card-row">
+                        <span>押金金额</span>
+                        <span style="color: var(--danger-color); font-weight: 600;">¥99.00</span>
+                    </div>
+                    <div class="result-card-row">
+                        <span>绑定状态</span>
+                        <span class="status-badge bind-completed">已绑定</span>
+                    </div>
+                </div>
+
+                <button class="btn btn-primary" onclick="showPage('progress')">查看我的打卡进度</button>
+                <button class="btn btn-outline" style="margin-top: 12px;" onclick="showPage('camp-list')">返回训练营列表</button>
+            </div>
+        </div>
+
+        <!-- ============================================
+             PAGE 5b: 支付失败结果页
+             路由: /result/:orderId?status=failed
+             ============================================ -->
+        <div class="page" id="page-result-failed">
+            <header class="header">
+                <div class="header-back"></div>
+                <div class="header-title">支付结果</div>
+                <div class="header-action"></div>
+            </header>
+
+            <div class="result-container">
+                <div class="result-icon failed">✗</div>
+                <div class="result-title">支付失败</div>
+                <div class="result-desc">支付未完成，请重试或更换支付方式</div>
+
+                <div class="result-card">
+                    <div class="result-card-title">订单信息</div>
+                    <div class="result-card-row">
+                        <span>订单编号</span>
+                        <span>CAMP_1735123456_A1B2C3</span>
+                    </div>
+                    <div class="result-card-row">
+                        <span>订单金额</span>
+                        <span>¥99.00</span>
+                    </div>
+                    <div class="result-card-row">
+                        <span>失败原因</span>
+                        <span style="color: var(--danger-color);">余额不足</span>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 12px; margin-top: 24px;">
+                    <button class="btn btn-primary" onclick="showPage('payment')">重新支付</button>
+                    <button class="btn btn-outline" onclick="showPage('camp-list')">返回</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================
+             PAGE 6: 支付后绑定页（降级路径）
+             路由: /bind/:orderId
+             说明: 固定收款码支付用户，支付后填写星球信息
+             bind_status = pending → completed
+             bind_method = user_fill
+             ============================================ -->
+        <div class="page" id="page-bind-planet">
+            <header class="header">
+                <div class="header-back" onclick="showPage('camp-list')">←</div>
+                <div class="header-title">完成绑定</div>
+                <div class="header-action"></div>
+            </header>
+
+            <div class="result-container" style="padding-top: 24px;">
+                <div class="result-icon success">✓</div>
+                <div class="result-title">支付成功!</div>
+                <div class="result-desc" style="margin-bottom: 16px;">请填写您的知识星球信息以便后续退款</div>
+            </div>
+
+            <div class="card">
+                <div class="result-card-row" style="padding: 12px 0; border-bottom: 1px solid var(--border-color);">
+                    <span style="color: var(--text-secondary);">订单号</span>
+                    <span style="font-family: monospace; font-size: 12px;">CAMP_1730000000_ABC123</span>
+                </div>
+                <div class="result-card-row" style="padding: 12px 0;">
+                    <span style="color: var(--text-secondary);">支付金额</span>
+                    <span style="color: var(--danger-color); font-weight: 600;">¥99.00</span>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="input-group">
+                    <label class="input-label">
+                        星球ID <span style="color: var(--danger-color);">*</span>
+                        <a href="#" style="color: var(--primary-color); font-size: 12px; margin-left: 8px;">[?如何获取]</a>
+                    </label>
+                    <input type="text" class="input" placeholder="请输入您的星球用户ID" />
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label">星球昵称 <span style="color: var(--danger-color);">*</span></label>
+                    <input type="text" class="input" placeholder="请输入您的星球昵称" />
+                </div>
+
+                <div class="input-group" style="margin-bottom: 0;">
+                    <label class="input-label">微信昵称（可选）</label>
+                    <input type="text" class="input" placeholder="用于核对身份" />
+                </div>
+            </div>
+
+            <div style="padding: 0 12px; margin-bottom: 16px;">
+                <div style="background: #fffbe6; border-radius: 8px; padding: 12px; font-size: 12px; color: #d48806;">
+                    ⏰ 请在 <strong>7天内</strong> 完成绑定，否则需联系管理员处理退款
+                </div>
+            </div>
+
+            <div style="padding: 0 16px 16px;">
+                <button class="btn btn-primary" onclick="showPage('bind-success')">提交并获取群二维码</button>
+            </div>
+        </div>
+
+        <!-- ============================================
+             PAGE 6b: 绑定成功页（降级路径）
+             路由: /bind/:orderId/success
+             ============================================ -->
+        <div class="page" id="page-bind-success">
+            <header class="header">
+                <div class="header-back"></div>
+                <div class="header-title">绑定成功</div>
+                <div class="header-action"></div>
+            </header>
+
+            <div class="result-container">
+                <div class="result-icon success">✓</div>
+                <div class="result-title">绑定成功!</div>
+                <div class="result-desc">恭喜您成功报名 21天早起打卡训练营</div>
+
+                <!-- 群二维码展示 -->
+                <div style="background: white; border-radius: 16px; padding: 24px; margin: 24px 0; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                    <div style="width: 200px; height: 200px; background: #f0f0f0; margin: 0 auto 16px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 8px;">
+                        <div style="font-size: 48px;">📱</div>
+                        <div style="font-size: 12px; color: var(--text-secondary);">[训练营群二维码]</div>
+                    </div>
+                    <div style="text-align: center; font-size: 14px; color: var(--text-regular);">
+                        长按保存二维码，扫码加入训练营群
+                    </div>
+                </div>
+
+                <div class="result-card">
+                    <div class="result-card-title">📋 您的报名信息</div>
+                    <div class="result-card-row">
+                        <span>星球昵称</span>
+                        <span>小明同学</span>
+                    </div>
+                    <div class="result-card-row">
+                        <span>星球ID</span>
+                        <span>123456789</span>
+                    </div>
+                    <div class="result-card-row">
+                        <span>押金金额</span>
+                        <span style="color: var(--danger-color); font-weight: 600;">¥99.00</span>
+                    </div>
+                    <div class="result-card-row">
+                        <span>绑定方式</span>
+                        <span class="method-badge user-fill">✏️ 用户填写</span>
+                    </div>
+                </div>
+
+                <button class="btn btn-primary" onclick="showPage('progress')">查看我的打卡进度</button>
+            </div>
+        </div>
+
+        <!-- ============================================
+             PAGE 7: 打卡进度页 - v1优化
+             路由: /camps/:campId/progress
+             ============================================ -->
+        <div class="page" id="page-progress">
+            <header class="header">
+                <div class="header-back" onclick="showPage('camp-list')">←</div>
+                <div class="header-title">打卡进度</div>
+                <div class="header-action"></div>
+            </header>
+
+            <div class="progress-header">
+                <div class="progress-camp-name">30天阅读习惯养成营</div>
+                <div class="progress-stats">
+                    <div class="progress-stat">
+                        <div class="progress-stat-value">18</div>
+                        <div class="progress-stat-label">已打卡</div>
+                    </div>
+                    <div class="progress-stat">
+                        <div class="progress-stat-value">20</div>
+                        <div class="progress-stat-label">要求</div>
+                    </div>
+                    <div class="progress-stat">
+                        <div class="progress-stat-value">12</div>
+                        <div class="progress-stat-label">剩余天数</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="progress-bar-container">
+                <div class="progress-bar-label">
+                    <span>完成进度</span>
+                    <span>18/20 (90%)</span>
+                </div>
+                <div class="progress-bar-large">
+                    <div class="progress-fill" style="width: 90%;"></div>
+                </div>
+                <div style="margin-top: 8px; text-align: center;">
+                    <!-- checkin_status = ongoing -->
+                    <span class="status-badge checkin-ongoing" style="font-size: 14px; padding: 4px 12px;">
+                        🎯 再打卡2天即可达标
+                    </span>
+                </div>
+            </div>
+
+            <!-- 打卡日历 -->
+            <div class="checkin-calendar">
+                <div class="calendar-header">
+                    <div class="calendar-title">2025年1月</div>
+                    <div class="calendar-nav">
+                        <button>‹</button>
+                        <button>›</button>
+                    </div>
+                </div>
+                <div class="calendar-weekdays">
+                    <span>日</span>
+                    <span>一</span>
+                    <span>二</span>
+                    <span>三</span>
+                    <span>四</span>
+                    <span>五</span>
+                    <span>六</span>
+                </div>
+                <div class="calendar-days">
+                    <div class="calendar-day"></div>
+                    <div class="calendar-day"></div>
+                    <div class="calendar-day checked">1</div>
+                    <div class="calendar-day checked">2</div>
+                    <div class="calendar-day missed">3</div>
+                    <div class="calendar-day checked">4</div>
+                    <div class="calendar-day checked">5</div>
+                    <div class="calendar-day checked">6</div>
+                    <div class="calendar-day checked">7</div>
+                    <div class="calendar-day checked">8</div>
+                    <div class="calendar-day checked">9</div>
+                    <div class="calendar-day missed">10</div>
+                    <div class="calendar-day checked">11</div>
+                    <div class="calendar-day checked">12</div>
+                    <div class="calendar-day checked">13</div>
+                    <div class="calendar-day checked">14</div>
+                    <div class="calendar-day checked">15</div>
+                    <div class="calendar-day checked">16</div>
+                    <div class="calendar-day checked">17</div>
+                    <div class="calendar-day today checked">18</div>
+                    <div class="calendar-day future">19</div>
+                    <div class="calendar-day future">20</div>
+                    <div class="calendar-day future">21</div>
+                    <div class="calendar-day future">22</div>
+                    <div class="calendar-day future">23</div>
+                    <div class="calendar-day future">24</div>
+                    <div class="calendar-day future">25</div>
+                    <div class="calendar-day future">26</div>
+                    <div class="calendar-day future">27</div>
+                    <div class="calendar-day future">28</div>
+                    <div class="calendar-day future">29</div>
+                    <div class="calendar-day future">30</div>
+                </div>
+            </div>
+
+            <!-- 绑定状态卡片 -->
+            <div class="card">
+                <div class="flex-between mb-8">
+                    <span style="font-weight: 600;">账号绑定</span>
+                    <!-- bind_status = completed -->
+                    <span class="status-badge bind-completed">已绑定</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">绑定方式</span>
+                    <!-- bind_method = h5_bindplanet -->
+                    <span class="method-badge h5-bindplanet">📱 H5绑定</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">星球昵称</span>
+                    <span class="detail-value">早起的鸟儿</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">星球ID</span>
+                    <span class="detail-value">88455815</span>
+                </div>
+            </div>
+
+            <!-- 预计退款卡片 -->
+            <div class="refund-status-card">
+                <div class="refund-status-header">
+                    <span class="refund-status-title">退款状态</span>
+                    <!-- checkin_status = ongoing -->
+                    <span class="status-badge checkin-ongoing">打卡进行中</span>
+                </div>
+                <div class="refund-amount">
+                    预计可退 ¥199.00
+                </div>
+                <div style="text-align: center; font-size: 12px; color: var(--text-secondary);">
+                    达标后，押金将在训练营结束后7天内退还
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================
+             PAGE 8: 个人中心 - v1新增
+             路由: /profile
+             ============================================ -->
+        <div class="page" id="page-profile">
+            <div class="profile-header">
+                <div class="profile-avatar">👤</div>
+                <div class="profile-name">早起的鸟儿</div>
+                <div class="profile-id">星球ID: 88455815</div>
+            </div>
+
+            <div class="profile-menu">
+                <div class="profile-menu-item" onclick="showPage('camp-list')">
+                    <div class="profile-menu-icon">🏕️</div>
+                    <div class="profile-menu-title">我的训练营</div>
+                    <span class="profile-menu-badge">2</span>
+                    <div class="profile-menu-arrow">›</div>
+                </div>
+                <div class="profile-menu-item" onclick="showPage('refund-list')">
+                    <div class="profile-menu-icon">💰</div>
+                    <div class="profile-menu-title">退款记录</div>
+                    <div class="profile-menu-arrow">›</div>
+                </div>
+                <div class="profile-menu-item">
+                    <div class="profile-menu-icon">📝</div>
+                    <div class="profile-menu-title">打卡记录</div>
+                    <div class="profile-menu-arrow">›</div>
+                </div>
+            </div>
+
+            <div class="profile-menu">
+                <div class="profile-menu-item">
+                    <div class="profile-menu-icon">🔔</div>
+                    <div class="profile-menu-title">消息通知</div>
+                    <span class="profile-menu-badge">3</span>
+                    <div class="profile-menu-arrow">›</div>
+                </div>
+                <div class="profile-menu-item">
+                    <div class="profile-menu-icon">⚙️</div>
+                    <div class="profile-menu-title">设置</div>
+                    <div class="profile-menu-arrow">›</div>
+                </div>
+                <div class="profile-menu-item">
+                    <div class="profile-menu-icon">❓</div>
+                    <div class="profile-menu-title">帮助与反馈</div>
+                    <div class="profile-menu-arrow">›</div>
+                </div>
+            </div>
+
+            <!-- 底部TabBar -->
+            <div class="tab-bar">
+                <div class="tab-item" onclick="showPage('camp-list')">
+                    <span class="tab-icon">🏕️</span>
+                    <span>训练营</span>
+                </div>
+                <div class="tab-item" onclick="showPage('progress')">
+                    <span class="tab-icon">📊</span>
+                    <span>进度</span>
+                </div>
+                <div class="tab-item active">
+                    <span class="tab-icon">👤</span>
+                    <span>我的</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================
+             PAGE 9: 退款记录 - v1新增
+             路由: /refunds
+             ============================================ -->
+        <div class="page" id="page-refund-list">
+            <header class="header">
+                <div class="header-back" onclick="showPage('profile')">←</div>
+                <div class="header-title">退款记录</div>
+                <div class="header-action"></div>
+            </header>
+
+            <div class="refund-list">
+                <!-- refund_status = success -->
+                <div class="refund-item">
+                    <div class="refund-item-header">
+                        <span class="refund-item-camp">14天冥想入门训练营</span>
+                        <span class="status-badge refund-success">退款成功</span>
+                    </div>
+                    <div class="refund-item-body">
+                        <div class="refund-item-info">
+                            <div>退款时间：2024-12-20 15:30</div>
+                            <div>打卡达标：12/10天</div>
+                        </div>
+                        <div class="refund-item-amount">+¥79.00</div>
+                    </div>
+                </div>
+
+                <!-- refund_status = processing -->
+                <div class="refund-item">
+                    <div class="refund-item-header">
+                        <span class="refund-item-camp">7天写作训练营</span>
+                        <span class="status-badge refund-processing">处理中</span>
+                    </div>
+                    <div class="refund-item-body">
+                        <div class="refund-item-info">
+                            <div>申请时间：2024-12-25 10:00</div>
+                            <div>打卡达标：6/5天</div>
+                        </div>
+                        <div class="refund-item-amount pending">¥49.00</div>
+                    </div>
+                </div>
+
+                <!-- refund_status = pending -->
+                <div class="refund-item">
+                    <div class="refund-item-header">
+                        <span class="refund-item-camp">21天早起训练营</span>
+                        <span class="status-badge refund-pending">待审核</span>
+                    </div>
+                    <div class="refund-item-body">
+                        <div class="refund-item-info">
+                            <div>提交时间：2024-12-26 09:00</div>
+                            <div>打卡达标：16/15天</div>
+                        </div>
+                        <div class="refund-item-amount pending">¥99.00</div>
+                    </div>
+                </div>
+
+                <!-- refund_status = approved -->
+                <div class="refund-item">
+                    <div class="refund-item-header">
+                        <span class="refund-item-camp">30天健身训练营</span>
+                        <span class="status-badge refund-approved">已通过</span>
+                    </div>
+                    <div class="refund-item-body">
+                        <div class="refund-item-info">
+                            <div>审核时间：2024-12-26 14:00</div>
+                            <div>打卡达标：22/20天</div>
+                        </div>
+                        <div class="refund-item-amount pending">¥199.00</div>
+                    </div>
+                </div>
+
+                <!-- refund_status = rejected -->
+                <div class="refund-item">
+                    <div class="refund-item-header">
+                        <span class="refund-item-camp">60天英语学习营</span>
+                        <span class="status-badge refund-rejected">已拒绝</span>
+                    </div>
+                    <div class="refund-item-body">
+                        <div class="refund-item-info">
+                            <div>拒绝原因：打卡未达标</div>
+                            <div>打卡记录：35/45天</div>
+                        </div>
+                        <div class="refund-item-amount pending" style="color: var(--danger-color); text-decoration: line-through;">¥299.00</div>
+                    </div>
+                </div>
+
+                <!-- refund_status = failed -->
+                <div class="refund-item">
+                    <div class="refund-item-header">
+                        <span class="refund-item-camp">14天早睡训练营</span>
+                        <span class="status-badge refund-failed">退款失败</span>
+                    </div>
+                    <div class="refund-item-body">
+                        <div class="refund-item-info">
+                            <div>失败原因：退款渠道异常</div>
+                            <div>请联系客服处理</div>
+                        </div>
+                        <div class="refund-item-amount pending" style="color: var(--danger-color);">¥59.00</div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
-        function showH5Page(page) {
+        // ============================================
+        // 用户状态模拟（实际开发中从 localStorage/cookie 读取）
+        // ============================================
+        let isLoggedIn = false;  // 是否已登录（已授权）
+        let hasBound = false;    // 是否已绑定星球账号（已完成报名流程）
+
+        // 检查本地登录态（模拟）
+        function checkLoginStatus() {
+            // 实际实现:
+            // return !!localStorage.getItem('auth_token') && !isTokenExpired();
+            return isLoggedIn;
+        }
+
+        // 检查是否已绑定（模拟）
+        function checkBindStatus() {
+            // 实际实现:
+            // return !!localStorage.getItem('planet_user_id');
+            return hasBound;
+        }
+
+        // 设置登录态（模拟授权成功）
+        function setLoggedIn(status) {
+            isLoggedIn = status;
+            if (!status) {
+                hasBound = false; // 退出登录时清除绑定状态
+            }
+            updateLoginUI();
+        }
+
+        // 设置绑定状态
+        function setBound(status) {
+            hasBound = status;
+            if (status) {
+                isLoggedIn = true; // 已绑定必然已登录
+            }
+            updateLoginUI();
+        }
+
+        // 更新UI显示登录状态
+        function updateLoginUI() {
+            const loginIndicator = document.getElementById('login-indicator');
+            if (loginIndicator) {
+                if (hasBound) {
+                    loginIndicator.textContent = '已绑定';
+                    loginIndicator.style.background = '#52c41a';
+                } else if (isLoggedIn) {
+                    loginIndicator.textContent = '已登录';
+                    loginIndicator.style.background = '#1890ff';
+                } else {
+                    loginIndicator.textContent = '未登录';
+                    loginIndicator.style.background = '#ff4d4f';
+                }
+            }
+        }
+
+        // ============================================
+        // 页面初始化 - 根据用户状态决定入口页面
+        // ============================================
+        function initPage() {
+            if (checkBindStatus()) {
+                // 已绑定用户：直接显示个人中心
+                showPage('profile');
+            } else {
+                // 未绑定用户：显示训练营列表
+                showPage('camp-list');
+            }
+        }
+
+        // ============================================
+        // 报名流程入口 - 检查登录态
+        // ============================================
+        function handleEnroll() {
+            if (checkLoginStatus()) {
+                // 已登录，直接进入报名页面
+                showPage('enroll');
+            } else {
+                // 未登录，显示授权弹窗
+                showModal('auth-modal');
+            }
+        }
+
+        // 授权成功后的回调
+        function onAuthSuccess() {
+            setLoggedIn(true);
+            hideModal('auth-modal');
+            showPage('enroll');
+        }
+
+        // 切换登录态（调试用）
+        function toggleLogin() {
+            if (hasBound) {
+                // 已绑定 -> 未登录
+                setLoggedIn(false);
+            } else if (isLoggedIn) {
+                // 已登录未绑定 -> 未登录
+                setLoggedIn(false);
+            } else {
+                // 未登录 -> 已登录未绑定
+                setLoggedIn(true);
+            }
+        }
+
+        // 模拟已绑定用户（调试用）
+        function simulateLoggedInUser() {
+            setBound(true);
+            showPage('profile');
+        }
+
+        // ============================================
+        // 页面切换
+        // ============================================
+        function showPage(pageId) {
             // Hide all pages
-            document.querySelectorAll('.page-container').forEach(p => {
-                p.classList.remove('active');
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.remove('active');
             });
 
             // Show target page
-            document.getElementById(page + 'Page').classList.add('active');
+            const targetPage = document.getElementById('page-' + pageId);
+            if (targetPage) {
+                targetPage.classList.add('active');
+            }
 
             // Update nav buttons
-            document.querySelectorAll('.page-demo-nav button').forEach(btn => {
+            document.querySelectorAll('.prototype-nav button').forEach(btn => {
                 btn.classList.remove('active');
+                if (btn.textContent.includes(getPageTitle(pageId))) {
+                    btn.classList.add('active');
+                }
             });
-            event.target.classList.add('active');
         }
+
+        function getPageTitle(pageId) {
+            const titles = {
+                'camp-list': '训练营列表',
+                'camp-detail': '训练营详情',
+                'oauth-loading': '授权弹窗',
+                'enroll': '报名(已是会员)',
+                'enroll-non-member': '报名(非会员)',
+                'payment': '支付页面',
+                'result-success': '主路径成功',
+                'result-failed': '支付失败',
+                'bind-planet': '降级-填写绑定',
+                'bind-success': '降级-绑定成功',
+                'progress': '打卡进度',
+                'profile': '个人中心',
+                'refund-list': '退款记录'
+            };
+            return titles[pageId] || '';
+        }
+
+        // 模态框控制
+        function showModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.style.display = 'flex';
+            }
+        }
+
+        function hideModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.style.display = 'none';
+            }
+        }
+
+        // ============================================
+        // 页面加载初始化
+        // URL参数说明:
+        // - ?bound=1  模拟已绑定用户（直接显示个人中心）
+        // - ?logged=1 模拟已登录但未绑定用户
+        // ============================================
+        window.onload = function() {
+            // 解析 URL 参数
+            const urlParams = new URLSearchParams(window.location.search);
+
+            if (urlParams.get('bound') === '1') {
+                // 模拟已绑定用户
+                setBound(true);
+                showPage('profile');
+            } else if (urlParams.get('logged') === '1') {
+                // 模拟已登录但未绑定
+                setLoggedIn(true);
+                showPage('camp-list');
+            }
+            // 默认情况：未登录用户，显示训练营列表（HTML默认active）
+        };
     </script>
 </body>
 </html>

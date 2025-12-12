@@ -352,7 +352,7 @@ cp .claude/config.v0.json .claude/config.json
 
 - [指令快速参考](./commands/QUICKSTART.md)
 - [指令详细文档](./commands/README.md)
-- [v0 技术方案](../docs/v0/技术方案-详细版.md)
+- [v0 技术方案](../docs/archive/v0/技术方案-详细版.md)
 - [项目配置](../CLAUDE.md_back)
 
 ---

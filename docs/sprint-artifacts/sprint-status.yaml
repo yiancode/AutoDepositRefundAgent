@@ -72,30 +72,30 @@ development_status:
   epic-3-retrospective: optional
 
   # Epic 4: 身份匹配与退款流程
-  epic-4: backlog
-  4-1-direct-match: backlog
-  4-2-manual-match: backlog
-  4-3-refund-list-generate: backlog
-  4-4-refund-review: backlog
-  4-5-refund-execute: backlog
-  4-6-refund-notification: backlog
+  epic-4: in-progress
+  4-1-direct-match: ready-for-dev
+  4-2-manual-match: ready-for-dev
+  4-3-refund-list-generate: ready-for-dev
+  4-4-refund-review: ready-for-dev
+  4-5-refund-execute: ready-for-dev
+  4-6-refund-notify: ready-for-dev
   epic-4-retrospective: optional
 
   # Epic 5: 会员管理与通知系统
-  epic-5: backlog
-  5-1-member-list: backlog
-  5-2-member-detail: backlog
-  5-3-manual-bind: backlog
-  5-4-join-group-remind: backlog
-  5-5-checkin-remind: backlog
-  5-6-end-remind: backlog
+  epic-5: in-progress
+  5-1-member-list: ready-for-dev
+  5-2-member-detail: ready-for-dev
+  5-3-manual-bind: ready-for-dev
+  5-4-join-group-remind: ready-for-dev
+  5-5-checkin-remind: ready-for-dev
+  5-6-end-remind: ready-for-dev
   epic-5-retrospective: optional
 
   # Epic 6: 统计报表与系统完善
-  epic-6: backlog
-  6-1-camp-report: backlog
-  6-2-data-export: backlog
-  6-3-system-config: backlog
-  6-4-operation-log: backlog
-  6-5-exception-handling: backlog
+  epic-6: in-progress
+  6-1-camp-report: ready-for-dev
+  6-2-data-export: ready-for-dev
+  6-3-system-config: ready-for-dev
+  6-4-operation-log: ready-for-dev
+  6-5-exception-handling: ready-for-dev
   epic-6-retrospective: optional

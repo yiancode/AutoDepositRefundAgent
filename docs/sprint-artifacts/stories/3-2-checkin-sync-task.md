@@ -2,6 +2,8 @@
 
 **Status**: ready-for-dev
 
+> **SSOT引用**: [状态枚举定义.md](../../v1/design/状态枚举定义.md) - bind_status、camp_status 等状态枚举值
+
 ---
 
 ## Story

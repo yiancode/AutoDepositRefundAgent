@@ -289,7 +289,7 @@ GET /api/admin/members?campId=&bindStatus=&eligibleForRefund=&keyword=&page=&pag
 
 ### 状态枚举引用
 
-> **SSOT 引用**: [状态枚举定义.md](../../v1/design/状态枚举定义.md)
+> **SSOT引用**: [状态枚举定义.md](../../v1/design/状态枚举定义.md)
 
 **bind_status 绑定状态**:
 - `pending`: 待绑定

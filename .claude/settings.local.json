@@ -67,7 +67,13 @@
       "Bash(rm:*)",
       "Bash(git mv:*)",
       "Bash(find:*)",
-      "Bash(mv:*)"
+      "Bash(mv:*)",
+      "mcp__filesystem__list_directory_with_sizes",
+      "Bash(xargs ls:*)",
+      "Bash(for:*)",
+      "Bash(do if ! grep -q \"^## References\" \"$f\")",
+      "Bash(then echo \"$f\")",
+      "Bash(fi)"
     ],
     "deny": [],
     "ask": []

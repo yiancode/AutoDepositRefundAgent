@@ -247,7 +247,7 @@ Feature: 异常告警
 
 ### 状态枚举引用
 
-> **SSOT 引用**: [状态枚举定义.md](../../v1/design/状态枚举定义.md)
+> **SSOT引用**: [状态枚举定义.md](../../v1/design/状态枚举定义.md)
 
 **audit_status 审核状态**:
 - `pending`: 待审核

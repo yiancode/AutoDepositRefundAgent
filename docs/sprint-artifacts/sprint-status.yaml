@@ -2,7 +2,7 @@
 # project: AutoDepositRefundAgent
 # project_key: auto-deposit-refund
 # tracking_system: file-system
-# story_location: docs/sprint-artifacts
+# story_location: docs/sprint-artifacts/stories
 
 # STATUS DEFINITIONS:
 # ==================
@@ -33,7 +33,7 @@ generated: 2025-12-13
 project: AutoDepositRefundAgent
 project_key: auto-deposit-refund
 tracking_system: file-system
-story_location: docs/sprint-artifacts
+story_location: docs/sprint-artifacts/stories
 
 development_status:
   # Epic 1: 基础框架与训练营管理
@@ -49,26 +49,26 @@ development_status:
   epic-1-retrospective: optional
 
   # Epic 2: 会员报名与支付系统
-  epic-2: backlog
-  2-1-h5-camp-list: backlog
-  2-2-wechat-oauth: backlog
-  2-3-camp-detail-enroll: backlog
-  2-4-wechat-payment: backlog
-  2-5-payment-webhook: backlog
-  2-6-group-qrcode: backlog
-  2-7-user-fill-bind: backlog
-  2-8-bind-expire-check: backlog
-  2-9-payment-polling: backlog
+  epic-2: in-progress
+  2-1-h5-camp-list: ready-for-dev
+  2-2-wechat-oauth: ready-for-dev
+  2-3-camp-detail-enroll: ready-for-dev
+  2-4-wechat-payment: ready-for-dev
+  2-5-payment-webhook: ready-for-dev
+  2-6-group-qrcode: ready-for-dev
+  2-7-user-fill-bind: ready-for-dev
+  2-8-bind-expire-check: ready-for-dev
+  2-9-payment-polling: ready-for-dev
   epic-2-retrospective: optional
 
   # Epic 3: 打卡数据同步与进度查询
-  epic-3: backlog
-  3-1-zsxq-sdk-integration: backlog
-  3-2-checkin-sync-task: backlog
-  3-3-manual-sync: backlog
-  3-4-token-expire-alert: backlog
-  3-5-h5-checkin-progress: backlog
-  3-6-admin-checkin-stats: backlog
+  epic-3: in-progress
+  3-1-zsxq-sdk-integration: ready-for-dev
+  3-2-checkin-sync-task: ready-for-dev
+  3-3-manual-sync: ready-for-dev
+  3-4-token-expire-alert: ready-for-dev
+  3-5-h5-checkin-progress: ready-for-dev
+  3-6-admin-checkin-stats: ready-for-dev
   epic-3-retrospective: optional
 
   # Epic 4: 身份匹配与退款流程
